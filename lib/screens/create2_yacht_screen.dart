@@ -6,6 +6,7 @@ import '../widgets/yacht/create2/create_yacht_parts_page_title.dart';
 import '../widgets/yacht/create2/create_yacht_parts_registration_section.dart';
 import '../widgets/yacht/create2/create_yacht_register_button_section.dart';
 import '../widgets/yacht/create2/recommended_parts_list.dart';
+import '../services/yacht_service.dart';
 
 class Create2YachtScreen extends StatefulWidget {
   const Create2YachtScreen({
@@ -23,6 +24,7 @@ class Create2YachtScreen extends StatefulWidget {
 
 class _Create2YachtScreenState extends State<Create2YachtScreen> {
   final List<YachtPart> _parts = [];
+  bool _isRegistering = false;
 
   void _handlePartAdded(YachtPart part) {
     setState(() {
@@ -64,7 +66,11 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
         ),
       ),
       bottomNavigationBar: CreateYachtRegisterButtonSection(
-        onPressed: _handleRegister,
+        onPressed: _isRegistering
+            ? null
+            : () {
+                _handleRegister();
+              },
       ),
     );
   }
@@ -75,25 +81,64 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
     });
   }
 
-  void _handleRegister() {
-    final payload = {
-      'yachtName': widget.yachtName,
-      'yachtAlias': widget.yachtAlias,
-      'parts': _parts
+  Future<void> _handleRegister() async {
+    if (_isRegistering) return;
+
+    setState(() {
+      _isRegistering = true;
+    });
+
+    try {
+      // 백엔드 AddPartDto 구조에 맞게 데이터 변환
+      final parts = _parts
           .map(
             (part) => {
               'name': part.equipmentName,
               'manufacturer': part.manufacturerName,
               'model': part.modelName,
-              'latestMaintenanceDate': part.latestMaintenanceDate.toIso8601String(),
               'interval': part.maintenancePeriodInMonths,
             },
           )
-          .toList(),
-    };
+          .toList();
 
-    debugPrint('등록 데이터: $payload');
-    Navigator.of(context).popUntil((route) => route.isFirst);
+      final result = await YachtService.createYacht(
+        yachtName: widget.yachtName,
+        yachtAlias: widget.yachtAlias,
+        parts: parts,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        // 등록 성공 시 홈 스크린으로 이동
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        // 등록 실패 시 에러 메시지 표시
+        setState(() {
+          _isRegistering = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? '요트 등록에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isRegistering = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('요트 등록 중 오류가 발생했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 

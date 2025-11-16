@@ -5,10 +5,10 @@ import '../../common/custom_button.dart';
 class CreateYachtRegisterButtonSection extends StatelessWidget {
   const CreateYachtRegisterButtonSection({
     super.key,
-    required this.onPressed,
+    this.onPressed,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

@@ -5,6 +5,9 @@ import 'package:frontend/screens/notice_screen.dart';
 import 'package:frontend/screens/sign_in_screen.dart';
 import 'package:frontend/services/auth_service.dart';
 
+// RouteObserver를 전역으로 선언
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() {
   runApp(const MyApp());
 }
@@ -17,6 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Hooaah',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [routeObserver],
       theme: ThemeData(
         fontFamily: 'NotoSans',
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E5090)),

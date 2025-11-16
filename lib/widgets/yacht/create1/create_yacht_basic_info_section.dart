@@ -18,7 +18,7 @@ class CreateYachtBasicInfoSection extends StatelessWidget {
   static const List<String> _dummyYachts = [
     'FarEast 28',
     'Farr 40',
-    'Benetaur 473',
+    'Beneteau 473',
     'J/24',
     'Laser',
     'Swan 50',
