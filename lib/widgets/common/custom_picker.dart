@@ -24,7 +24,7 @@ class CustomPicker extends StatelessWidget {
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       final initialIndex = selectedValue != null
-          ? (items.indexOf(selectedValue!) >= 0
+          ? (items.contains(selectedValue!)
               ? items.indexOf(selectedValue!)
               : 0)
           : 0;
@@ -73,6 +73,7 @@ class CustomPicker extends StatelessWidget {
                               item,
                               style: const TextStyle(
                                 fontSize: 18,
+                                letterSpacing: -0.5,
                               ),
                             ),
                           ),

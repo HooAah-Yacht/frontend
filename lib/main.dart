@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/login_screen.dart';
-import 'package:frontend/screens/home_screen.dart';
+import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/notice_screen.dart';
 import 'package:frontend/screens/sign_in_screen.dart';
 import 'package:frontend/services/auth_service.dart';
@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const AuthInitializer(),
         '/login': (context) => const LoginScreen(),
         '/signin': (context) => const SignInScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MainScreen(),
         '/notice': (context) => const NoticeScreen(),
       },
       initialRoute: '/',

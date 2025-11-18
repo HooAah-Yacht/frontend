@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'auth_service.dart';
 
 class YachtService {
-  static const String baseUrl = AuthService.baseUrl;
+  static String get baseUrl => AuthService.baseUrl;
 
   // 요트 리스트 조회
   static Future<List<Map<String, dynamic>>> getYachtList() async {
@@ -13,14 +13,24 @@ class YachtService {
         return [];
       }
 
+      // 토큰 앞뒤 공백 제거
+      final cleanToken = token.trim();
+
       final url = '$baseUrl/api/yacht';
+      print('요트 리스트 조회 URL: $url');
+      
       final response = await http.get(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $cleanToken',
         },
       );
+
+      print('요트 리스트 조회 응답 상태 코드: ${response.statusCode}');
+      if (response.statusCode != 200) {
+        print('요트 리스트 조회 응답 본문: ${response.body}');
+      }
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -62,31 +72,49 @@ class YachtService {
       final payload = {
         'yacht': {
           'name': yachtName,
-          if (yachtAlias != null && yachtAlias.isNotEmpty) 'nickName': yachtAlias,
+          'nickName': yachtAlias,
         },
         'partList': parts.map((part) => {
               'name': part['name'],
               'manufacturer': part['manufacturer'],
               'model': part['model'],
               'interval': part['interval'],
+              'lastRepair': part['lastRepair'],
             }).toList(),
       };
-
+      
+      // 토큰 앞뒤 공백 제거
+      final cleanToken = token.trim();
+      
+      // 요청 헤더 확인
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $cleanToken',
+      };
+      
       final response = await http.post(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: headers,
         body: jsonEncode(payload),
       );
+
+      print('요트 등록 응답 상태 코드: ${response.statusCode}');
+      print('요트 등록 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         return {'success': true};
       } else {
-        final Map<String, dynamic>? errorData =
-            response.body.isNotEmpty ? jsonDecode(response.body) : null;
-        final String? message = errorData?['message'] as String?;
+        // 응답이 JSON이 아닐 수 있으므로 안전하게 파싱
+        String? message;
+        if (response.body.isNotEmpty) {
+          try {
+            final Map<String, dynamic>? errorData = jsonDecode(response.body);
+            message = errorData?['message'] as String?;
+          } catch (e) {
+            // JSON이 아니면 응답 본문을 그대로 사용
+            message = response.body;
+          }
+        }
         return {
           'success': false,
           'message': message ?? '요트 등록에 실패했습니다. (${response.statusCode})',

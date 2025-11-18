@@ -1,17 +1,38 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 
 class AuthService {
-  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  // Android에서 flutter_secure_storage 설정
+  static const FlutterSecureStorage _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+  );
   static const String _tokenKey = 'auth_token';
-  static const String baseUrl = 'http://localhost:8080'; // TODO: 실제 서버 URL로 변경
+  
+  // 플랫폼에 따라 다른 baseUrl 사용
+  // Android 에뮬레이터: 10.0.2.2
+  // iOS 시뮬레이터: localhost
+  // 실제 기기: 호스트 머신의 IP 주소 필요
+  static String get baseUrl {
+    if (Platform.isAndroid) {
+      // Android 에뮬레이터는 10.0.2.2를 사용
+      // 실제 기기를 사용하는 경우 호스트 머신의 IP 주소로 변경 필요
+      return 'http://10.0.2.2:8080';
+    } else if (Platform.isIOS) {
+      // iOS 시뮬레이터는 localhost 사용 가능
+      return 'http://localhost:8080';
+    }
+    // 기타 플랫폼
+    return 'http://localhost:8080';
+  }
 
   // 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {  
     try {
       final url = '$baseUrl/public/user/login';
-      print('요청 URL: $url');
       
       final response = await http.post(
         Uri.parse(url),
@@ -23,7 +44,6 @@ class AuthService {
       );
 
       print('응답 상태 코드: ${response.statusCode}');
-      print('응답 헤더: ${response.headers}');
       print('응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
@@ -63,7 +83,38 @@ class AuthService {
 
   // 토큰 불러오기
   static Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    final token = await _storage.read(key: _tokenKey);
+    if (token != null) {
+      // JWT 토큰 디코딩해서 만료 시간 확인 (디버깅용)
+      try {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          // Base64 디코딩 (payload 부분)
+          final payload = parts[1];
+          // Base64 패딩 추가
+          String paddedPayload = payload;
+          while (paddedPayload.length % 4 != 0) {
+            paddedPayload += '=';
+          }
+          final decoded = utf8.decode(base64Decode(paddedPayload));
+          final payloadMap = jsonDecode(decoded);
+          final exp = payloadMap['exp'] as int?;
+          if (exp != null) {
+            final expirationDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+            final now = DateTime.now();
+            print('토큰 만료까지: ${expirationDate.difference(now).inSeconds}초');
+            if (expirationDate.isBefore(now)) {
+              print('⚠️ 토큰이 만료되었습니다!');
+            }
+          }
+        }
+      } catch (e) {
+        print('토큰 디코딩 오류: $e');
+      }
+    } else {
+      print('토큰 불러오기 실패: 토큰이 없습니다.');
+    }
+    return token;
   }
 
   // 토큰 삭제 (로그아웃)

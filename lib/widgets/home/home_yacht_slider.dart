@@ -3,10 +3,12 @@ import 'package:frontend/widgets/common/custom_button.dart';
 
 class HomeYachtSlider extends StatefulWidget {
   final List<Map<String, dynamic>> yachtList;
+  final ValueChanged<int>? onYachtDetailPressed;
 
   const HomeYachtSlider({
     super.key,
     required this.yachtList,
+    this.onYachtDetailPressed,
   });
 
   @override
@@ -35,7 +37,6 @@ class _HomeYachtSliderState extends State<HomeYachtSlider> {
     // 앞뒤 공백 제거 및 연속 공백을 단일 공백으로 변환
     normalized = normalized.trim().replaceAll(RegExp(r'\s+'), ' ');
     final imagePath = 'assets/image/yacht/$normalized.png';
-    print('이미지 경로: $imagePath');
     return imagePath;
   }
 
@@ -48,7 +49,7 @@ class _HomeYachtSliderState extends State<HomeYachtSlider> {
     return Column(
       children: [
         SizedBox(
-          height: 345 + 24 + 34, // 이미지 + 간격 + 텍스트 높이만
+          height: 345 + 24 + 30 + 12 + 25, // 이미지 + 간격 + 별칭(24) + 간격(12) + 이름(20)
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
@@ -60,6 +61,7 @@ class _HomeYachtSliderState extends State<HomeYachtSlider> {
             itemBuilder: (context, index) {
               final yacht = widget.yachtList[index];
               final yachtName = yacht['name'] as String? ?? '';
+              final yachtNickName = yacht['nickName'] as String? ?? yachtName; // 별칭이 없으면 이름 사용
               final imagePath = _getImagePath(yachtName);
 
               return Column(
@@ -85,12 +87,23 @@ class _HomeYachtSliderState extends State<HomeYachtSlider> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // 요트 별칭 (24 사이즈, bold)
                   Text(
                     yachtName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.black,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  Text(
+                    yachtNickName,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ],
@@ -101,10 +114,9 @@ class _HomeYachtSliderState extends State<HomeYachtSlider> {
         const SizedBox(height: 24),
         CustomButton(
           text: '요트 상세보기',
-          onPressed: () {
-            // TODO: 요트 상세보기 스크린으로 이동
-            // Navigator.of(context).push(...);
-          },
+          onPressed: widget.onYachtDetailPressed != null
+              ? () => widget.onYachtDetailPressed!(_currentIndex)
+              : null,
         ),
         const SizedBox(height: 24),
         Row(

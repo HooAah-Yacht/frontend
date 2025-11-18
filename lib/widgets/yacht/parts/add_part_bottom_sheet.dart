@@ -1,149 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/widgets/common/custom_button.dart';
+import 'package:frontend/widgets/common/custom_date_picker.dart';
+import 'package:frontend/widgets/common/custom_text_field.dart';
 
-import '../../common/custom_button.dart';
-import '../../common/custom_date_picker.dart';
-import '../../common/custom_text_field.dart';
-import '../../common/part_file_list_item.dart';
-import '../../../models/yacht_part.dart';
+class AddPartBottomSheet extends StatefulWidget {
+  final Function(String name, String manufacturer, String model, DateTime? lastRepairDate, int interval) onSubmit;
 
-class CreateYachtPartsRegistrationSection extends StatelessWidget {
-  const CreateYachtPartsRegistrationSection({
+  const AddPartBottomSheet({
     super.key,
-    required this.onPartAdded,
-    required this.onPartRemoved,
-    required this.parts,
-  });
-
-  final ValueChanged<YachtPart> onPartAdded;
-  final ValueChanged<YachtPart> onPartRemoved;
-  final List<YachtPart> parts;
-
-  void _showAddBottomSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
-      ),
-      builder: (sheetContext) {
-        return _CreateYachtPartBottomSheet(
-          onSubmit: (data) {
-            debugPrint('장비명: ${data.equipmentName}');
-            debugPrint('제조사명: ${data.manufacturerName}');
-            debugPrint('모델명: ${data.modelName}');
-            debugPrint(
-              '최근 정비일: ${data.latestMaintenanceDate.toUtc().toIso8601String()}',
-            );
-            debugPrint('정비 주기: ${data.maintenancePeriodInMonths}');
-            Navigator.of(sheetContext).pop();
-            onPartAdded(
-              YachtPart(
-                equipmentName: data.equipmentName,
-                manufacturerName: data.manufacturerName,
-                modelName: data.modelName,
-                latestMaintenanceDate: data.latestMaintenanceDate,
-                maintenancePeriodInMonths: data.maintenancePeriodInMonths,
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Expanded(
-              child: Text(
-                '부품 등록',
-                style: TextStyle(
-                  fontSize: 20,
-                  letterSpacing: -0.5,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () => _showAddBottomSheet(context),
-              child: Container(
-                width: 30,
-                height: 30,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2B4184),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: SvgPicture.asset(
-                  'assets/image/plus_icon.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (parts.isEmpty)
-          const Center(
-            child: Text(
-              '등록된 부품이 없어요\n필요할 때 언제든 추가할 수 있어요',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                height: 1.5,
-                letterSpacing: -0.5,
-                color: Color(0xFF47546F),
-              ),
-            ),
-          )
-        else
-          Column(
-            children: [
-              for (var i = 0; i < parts.length; i++) ...[
-                PartFileListItem(
-                  equipmentName: parts[i].equipmentName,
-                  manufacturerName: parts[i].manufacturerName,
-                  modelName: parts[i].modelName,
-                  onRemove: () => onPartRemoved(parts[i]),
-                ),
-                if (i != parts.length - 1) const SizedBox(height: 16),
-              ],
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-class _CreateYachtPartBottomSheet extends StatefulWidget {
-  const _CreateYachtPartBottomSheet({
     required this.onSubmit,
   });
 
-  final ValueChanged<_PartFormData> onSubmit;
-
   @override
-  State<_CreateYachtPartBottomSheet> createState() =>
-      _CreateYachtPartBottomSheetState();
+  State<AddPartBottomSheet> createState() => _AddPartBottomSheetState();
 }
 
-class _CreateYachtPartBottomSheetState
-    extends State<_CreateYachtPartBottomSheet> {
+class _AddPartBottomSheetState extends State<AddPartBottomSheet> {
   final TextEditingController _equipmentController = TextEditingController();
   final TextEditingController _manufacturerController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
@@ -185,16 +59,44 @@ class _CreateYachtPartBottomSheetState
       return;
     }
 
-    final maintenanceDate = _selectedDate ?? DateTime.now();
+    final maintenanceDate = _selectedDate;
     final maintenancePeriod = period.isEmpty ? 12 : int.parse(period);
 
-    widget.onSubmit(
-      _PartFormData(
-        equipmentName: equipment,
-        manufacturerName: manufacturer,
-        modelName: model,
-        latestMaintenanceDate: maintenanceDate,
-        maintenancePeriodInMonths: maintenancePeriod,
+    // 확인 dialog 표시
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(
+          '부품을 추가하시겠습니까?',
+          style: TextStyle(
+            fontSize: 18,
+            letterSpacing: -0.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pop();
+              widget.onSubmit(equipment, manufacturer, model, maintenanceDate, maintenancePeriod);
+            },
+            child: const Text(
+              '추가',
+              style: TextStyle(
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -297,7 +199,7 @@ class _CreateYachtPartBottomSheetState
                   ),
                   const SizedBox(height: 40),
                   CustomButton(
-                    text: '등록하기',
+                    text: '추가하기',
                     onPressed: _handleSubmit,
                   ),
                 ],
@@ -325,22 +227,4 @@ class _CreateYachtPartBottomSheetState
     );
   }
 }
-
-class _PartFormData {
-  const _PartFormData({
-    required this.equipmentName,
-    required this.manufacturerName,
-    required this.modelName,
-    required this.latestMaintenanceDate,
-    required this.maintenancePeriodInMonths,
-  });
-
-  final String equipmentName;
-  final String manufacturerName;
-  final String modelName;
-  final DateTime latestMaintenanceDate;
-  final int maintenancePeriodInMonths;
-}
-
-
 

@@ -97,6 +97,9 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
               'manufacturer': part.manufacturerName,
               'model': part.modelName,
               'interval': part.maintenancePeriodInMonths,
+              // lastRepair: DateTime을 ISO 8601 형식으로 변환 (OffsetDateTime으로 파싱됨)
+              // UTC로 변환하여 타임존 정보 포함
+              'lastRepair': part.latestMaintenanceDate.toUtc().toIso8601String(),
             },
           )
           .toList();
@@ -110,8 +113,11 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        // 등록 성공 시 홈 스크린으로 이동
+        // 등록 성공 시 결과를 반환하고 홈 스크린으로 이동
         Navigator.of(context).popUntil((route) => route.isFirst);
+        // MainScreen의 리스트 갱신을 위해 약간의 지연 후 갱신
+        // MainScreen이 이미 마운트되어 있으므로 직접 갱신할 수 없으므로
+        // Navigator.popUntil 후 MainScreen의 생명주기에서 갱신되도록 함
       } else {
         // 등록 실패 시 에러 메시지 표시
         setState(() {

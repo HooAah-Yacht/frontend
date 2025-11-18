@@ -24,6 +24,8 @@ class CustomTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
+      textInputAction: TextInputAction.next,
+      enableInteractiveSelection: true,
       style: const TextStyle(
         fontSize: 16,
         letterSpacing: -0.5,

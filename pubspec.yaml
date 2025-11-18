@@ -46,7 +46,14 @@ dependencies:
   
   # For SVG images
   flutter_svg: ^2.0.10
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0
+  
+  # For URL launching (sharing)
+  url_launcher: ^6.2.5
+  
+  # For calendar widget
+  table_calendar: ^3.1.2
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

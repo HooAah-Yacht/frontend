@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class HomeYachtTitle extends StatelessWidget {
-  const HomeYachtTitle({super.key});
+class YachtManageTitle extends StatelessWidget {
+  const YachtManageTitle({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Text(
-      '내 요트',
+      '요트관리',
       style: TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.bold,

@@ -60,14 +60,20 @@ class CustomDatePicker extends StatelessWidget {
                       children: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('취소'),
+                          child: const Text(
+                            '취소',
+                            style: TextStyle(letterSpacing: -0.5),
+                          ),
                         ),
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pop();
                             onChanged(DateTime(tempYear, tempMonth, tempDay));
                           },
-                          child: const Text('완료'),
+                          child: const Text(
+                            '완료',
+                            style: TextStyle(letterSpacing: -0.5),
+                          ),
                         ),
                       ],
                     ),
