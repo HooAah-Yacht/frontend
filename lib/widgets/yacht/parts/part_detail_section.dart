@@ -26,7 +26,7 @@ class PartDetailSection extends StatelessWidget {
       return '-';
     }
     try {
-      final date = DateTime.parse(lastRepairStr);
+      final date = DateTime.parse(lastRepairStr).toLocal();
       return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
       return '-';

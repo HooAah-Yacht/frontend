@@ -52,7 +52,7 @@ class RepairHistorySectionState extends State<RepairHistorySection> {
       return '-';
     }
     try {
-      final date = DateTime.parse(repairDateStr);
+      final date = DateTime.parse(repairDateStr).toLocal();
       return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
       return '-';
@@ -79,24 +79,38 @@ class RepairHistorySectionState extends State<RepairHistorySection> {
       builder: (sheetContext) {
         return _AddRepairBottomSheet(
           partId: widget.partId,
-          onSubmit: (data) {
-            // RepairController.addRepair 참고
-            final repairData = {
-              'id': data.partId,
-              'date': data.repairDate.toUtc().toIso8601String(),
-              'content': data.content,
-            };
-            
-            debugPrint('정비 이력 등록 데이터:');
-            repairData.forEach((key, value) {
-              debugPrint('  $key: $value');
-            });
-            
-            // TODO: API 연결
-            // RepairService.addRepair 구현 필요
-            // RequestRepairDto에 content 필드 추가 필요
-            
-            Navigator.of(sheetContext).pop();
+          onSubmit: (data) async {
+            // API 호출
+            final result = await RepairService.addRepair(
+              partId: data.partId,
+              repairDate: data.repairDate,
+              content: data.content,
+            );
+
+            if (!mounted) return;
+
+            if (result['success'] == true) {
+              // 정비 이력 리스트 새로고침
+              loadRepairList();
+              
+              // 성공 메시지 표시
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result['message'] as String? ?? '정비 이력이 추가되었습니다.'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              
+              Navigator.of(sheetContext).pop();
+            } else {
+              // 에러 메시지 표시
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result['message'] as String? ?? '정비 이력 추가에 실패했습니다.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           },
         );
       },
@@ -210,9 +224,9 @@ class RepairHistorySectionState extends State<RepairHistorySection> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Content (더미 또는 실제 값)
+                    // Content
                     Text(
-                      content ?? 'content',
+                      (content == null || content.isEmpty) ? '정비 내용 없음' : content,
                       style: const TextStyle(
                         fontSize: 18,
                         letterSpacing: -0.5,
@@ -266,7 +280,22 @@ class _AddRepairBottomSheetState extends State<_AddRepairBottomSheet> {
     final content = _contentController.text.trim();
 
     _repairerError.value = repairer.isEmpty ? '정비자를 입력해주세요' : null;
-    _dateError.value = _selectedDate == null ? '정비일을 선택해주세요' : null;
+    
+    // 날짜 검증
+    if (_selectedDate == null) {
+      _dateError.value = '정비일을 선택해주세요';
+    } else {
+      final today = DateTime.now();
+      final todayOnly = DateTime(today.year, today.month, today.day);
+      final selectedDateOnly = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
+      
+      if (selectedDateOnly.isAfter(todayOnly)) {
+        _dateError.value = '정비일은 오늘 날짜 이후로 선택할 수 없습니다.';
+      } else {
+        _dateError.value = null;
+      }
+    }
+    
     _contentError.value = content.isEmpty ? '정비내용을 입력해주세요' : null;
 
     if (_repairerError.value != null ||
@@ -325,10 +354,19 @@ class _AddRepairBottomSheetState extends State<_AddRepairBottomSheet> {
                     hintText: '정비일',
                     selectedDate: _selectedDate,
                     onChanged: (date) {
-                      setState(() {
-                        _selectedDate = DateTime(date.year, date.month, date.day);
-                        _dateError.value = null;
-                      });
+                      final selectedDate = DateTime(date.year, date.month, date.day);
+                      final today = DateTime.now();
+                      final todayOnly = DateTime(today.year, today.month, today.day);
+                      
+                      // 오늘 이후 날짜는 선택 불가
+                      if (selectedDate.isAfter(todayOnly)) {
+                        _dateError.value = '정비일은 오늘 날짜 이후로 선택할 수 없습니다.';
+                      } else {
+                        setState(() {
+                          _selectedDate = selectedDate;
+                          _dateError.value = null;
+                        });
+                      }
                     },
                   ),
                   const SizedBox(height: 8),

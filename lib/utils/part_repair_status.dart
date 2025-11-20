@@ -27,7 +27,7 @@ class PartRepairStatusCalculator {
 
     try {
       final now = DateTime.now();
-      final lastRepair = DateTime.parse(lastRepairStr);
+      final lastRepair = DateTime.parse(lastRepairStr).toLocal();
 
       // 마지막 정비일 + 주기(월) = 다음 정비일
       final nextRepairDate = DateTime(

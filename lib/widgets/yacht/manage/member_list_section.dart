@@ -1,14 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:frontend/services/yacht_service.dart';
 
-class MemberListSection extends StatelessWidget {
-  final List<Map<String, dynamic>> members;
+class MemberListSection extends StatefulWidget {
+  final int yachtId;
 
   const MemberListSection({
     super.key,
-    required this.members,
+    required this.yachtId,
   });
+
+  @override
+  State<MemberListSection> createState() => _MemberListSectionState();
+}
+
+class _MemberListSectionState extends State<MemberListSection> {
+  List<Map<String, dynamic>> _members = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMemberList();
+  }
+
+  Future<void> _loadMemberList() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final members = await YachtService.getYachtUserList(widget.yachtId);
+      
+      setState(() {
+        _members = members;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('멤버 목록 로드 실패: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _inviteMember(BuildContext context) async {
     // 카카오톡 공유 기능
@@ -72,53 +107,60 @@ class MemberListSection extends StatelessWidget {
               // 멤버 리스트 박스
               Padding(
                 padding: const EdgeInsets.all(24),
-                child: members.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text(
-                          '등록된 멤버가 없습니다.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFFB0B8C1),
-                            letterSpacing: -0.5,
-                          ),
+                child: _isLoading
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: CircularProgressIndicator(),
                         ),
                       )
-                    : Column(
-                        children: members.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final member = entry.value;
-                          final name = member['name'] as String? ?? '';
-                          final email = member['email'] as String? ?? '';
+                    : _members.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Text(
+                              '등록된 멤버가 없습니다.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFB0B8C1),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: _members.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final member = entry.value;
+                              final name = member['name'] as String? ?? '';
+                              final email = member['email'] as String? ?? '';
 
-                          return Column(
-                            children: [
-                              if (index > 0) const SizedBox(height: 24),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              return Column(
                                 children: [
-                                  Text(
-                                    name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    email,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Color(0xFFB0B8C1),
-                                      letterSpacing: -0.5,
-                                    ),
+                                  if (index > 0) const SizedBox(height: 24),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.black,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      Text(
+                                        email,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Color(0xFFB0B8C1),
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
+                              );
+                            }).toList(),
+                          ),
               ),
               // 멤버 초대 버튼 (전체 너비, overflow hidden)
               ClipRRect(

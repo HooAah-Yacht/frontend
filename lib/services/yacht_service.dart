@@ -128,5 +128,52 @@ class YachtService {
       };
     }
   }
+
+  // 요트별 멤버 목록 조회
+  static Future<List<Map<String, dynamic>>> getYachtUserList(int yachtId) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null || token.isEmpty) {
+        print('멤버 목록 조회 실패: 토큰이 없습니다.');
+        return [];
+      }
+
+      // 토큰 앞뒤 공백 제거
+      final cleanToken = token.trim();
+
+      final url = '$baseUrl/api/yacht/user/$yachtId';
+      print('멤버 목록 조회 URL: $url');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $cleanToken',
+        },
+      );
+
+      print('멤버 목록 조회 응답 상태 코드: ${response.statusCode}');
+      if (response.statusCode != 200) {
+        print('멤버 목록 조회 응답 본문: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final Map<String, dynamic>? responseData = data['response'] as Map<String, dynamic>?;
+        final List<dynamic>? userList = responseData?['userList'] as List<dynamic>?;
+        
+        if (userList != null) {
+          return userList.map((item) => item as Map<String, dynamic>).toList();
+        }
+        return [];
+      } else {
+        print('멤버 목록 조회 실패: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('멤버 목록 조회 오류: $e');
+      return [];
+    }
+  }
 }
 

@@ -39,7 +39,7 @@ class PartListItem extends StatelessWidget {
     final lastRepairStrValue = lastRepairStr;
     if (lastRepairStrValue != null) {
       try {
-        final lastRepair = DateTime.parse(lastRepairStrValue);
+        final lastRepair = DateTime.parse(lastRepairStrValue).toLocal();
         lastRepairText = '최근 정비일: ${lastRepair.year}.${lastRepair.month.toString().padLeft(2, '0')}.${lastRepair.day.toString().padLeft(2, '0')}';
       } catch (e) {
         lastRepairText = '최근 정비일: -';

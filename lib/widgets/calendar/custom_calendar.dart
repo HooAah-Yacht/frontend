@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomCalendar extends StatefulWidget {
   final DateTime? selectedDay;
@@ -178,107 +179,134 @@ class _CustomCalendarState extends State<CustomCalendar> {
       calendarBuilders: CalendarBuilders(
         defaultBuilder: (context, date, focusedDay) {
           final isSelected = isSameDay(_selectedDay, date);
+          final events = _getEventsForDay(date);
+          
           return Container(
             margin: EdgeInsets.zero,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (isSelected)
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2B4184),
-                          shape: BoxShape.circle,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        if (isSelected)
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF2B4184),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                            color: isSelected ? Colors.white : Colors.black,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                    Text(
-                      '${date.day}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.black,
-                        letterSpacing: -0.5,
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                // 일정 마커
+                if (events.isNotEmpty) _buildEventMarkers(events),
+              ],
             ),
           );
         },
         selectedBuilder: (context, date, focusedDay) {
+          final events = _getEventsForDay(date);
+          
           return Container(
             margin: EdgeInsets.zero,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF2B4184),
-                        shape: BoxShape.circle,
-                      ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 20,
+                          height: 20,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2B4184),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Text(
+                          '${date.day}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '${date.day}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                // 일정 마커
+                if (events.isNotEmpty) _buildEventMarkers(events),
+              ],
             ),
           );
         },
         todayBuilder: (context, date, focusedDay) {
           final isSelected = isSameDay(_selectedDay, date);
+          final events = _getEventsForDay(date);
+          
           return Container(
             margin: EdgeInsets.zero,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (isSelected)
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2B4184),
-                          shape: BoxShape.circle,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        if (isSelected)
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF2B4184),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        Text(
+                          '${date.day}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                            color: isSelected ? Colors.white : Colors.black,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                    Text(
-                      '${date.day}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.black,
-                        letterSpacing: -0.5,
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                // 일정 마커
+                if (events.isNotEmpty) _buildEventMarkers(events),
+              ],
             ),
           );
         },
@@ -292,7 +320,7 @@ class _CustomCalendarState extends State<CustomCalendar> {
                 child: Text(
                   '${date.day}',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.normal,
                     color: Color(0xFFB0B8C1),
                     letterSpacing: -0.5,
@@ -303,7 +331,7 @@ class _CustomCalendarState extends State<CustomCalendar> {
           );
         },
         markerBuilder: (context, date, events) {
-          // 이벤트 마커 제거
+          // markerBuilder는 사용하지 않음 (각 builder에서 직접 처리)
           return const SizedBox.shrink();
         },
       ),
@@ -314,6 +342,56 @@ class _CustomCalendarState extends State<CustomCalendar> {
           color: const Color(0xFFB0B8C1),
         ),
       ],
+    );
+  }
+  
+  // 일정 마커 빌더
+  Widget _buildEventMarkers(List<dynamic> events) {
+    final eventCount = events.length;
+    final displayCount = eventCount > 4 ? 5 : eventCount;
+    
+    return Positioned(
+      bottom: 14,
+      left: 0,
+      right: 0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(displayCount, (index) {
+          if (index == 4 && eventCount > 4) {
+            // 5번째 마커: plus_icon
+            return Padding(
+              padding: EdgeInsets.only(left: index > 0 ? 4 : 0),
+              child: SvgPicture.asset(
+                'assets/image/plus_icon.svg',
+                width: 6,
+                height: 6,
+                colorFilter: const ColorFilter.mode(
+                  Colors.black,
+                  BlendMode.srcIn,
+                ),
+              ),
+            );
+          } else {
+            // 색상 마커
+            final calendar = events[index] as Map<String, dynamic>;
+            final completed = calendar['completed'] as bool? ?? false;
+            final color = completed ? const Color(0xFF87C149) : const Color(0xFFF2C538);
+            
+            return Padding(
+              padding: EdgeInsets.only(left: index > 0 ? 4 : 0),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }
+        }),
+      ),
     );
   }
 }

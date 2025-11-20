@@ -154,8 +154,23 @@ class _YachtManageScreenContentState extends State<YachtManageScreenContent> {
                     },
                   ),
                   const SizedBox(height: 40),
-                  MemberListSection(
-                    members: [], // TODO: API 연동 후 멤버 리스트 전달
+                  Builder(
+                    builder: (context) {
+                      // 선택된 요트의 ID 찾기
+                      final selectedYacht = widget.yachtList.firstWhere(
+                        (yacht) => (yacht['name'] as String?) == _selectedYachtName,
+                        orElse: () => widget.yachtList.isNotEmpty ? widget.yachtList.first : <String, dynamic>{},
+                      );
+                      final yachtId = (selectedYacht['id'] as num?)?.toInt();
+                      
+                      // 요트 ID가 있으면 MemberListSection 표시
+                      if (yachtId != null && widget.yachtList.isNotEmpty) {
+                        return MemberListSection(yachtId: yachtId);
+                      } else {
+                        // 요트가 선택되지 않았거나 리스트가 비어있으면 빈 위젯
+                        return const SizedBox.shrink();
+                      }
+                    },
                   ),
                 ],
               ),
