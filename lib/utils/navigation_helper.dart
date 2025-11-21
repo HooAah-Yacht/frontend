@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/common/bottom_navigation.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/screens/yacht_manage_screen.dart';
 import 'package:frontend/screens/calendar_screen.dart';
 import 'package:frontend/services/yacht_service.dart';
@@ -27,11 +28,9 @@ class NavigationHelper {
       final yachtList = await YachtService.getYachtList();
       if (yachtList.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('등록된 요트가 없습니다.'),
-              backgroundColor: Colors.red,
-            ),
+          CustomSnackBar.showError(
+            context,
+            message: '등록된 요트가 없습니다.',
           );
         }
         return;
@@ -61,10 +60,9 @@ class NavigationHelper {
 
     // 기타 탭
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('해당 기능은 준비 중입니다.'),
-        ),
+      CustomSnackBar.show(
+        context,
+        message: '해당 기능은 준비 중입니다.',
       );
     }
   }

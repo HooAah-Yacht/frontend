@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
 import 'package:frontend/widgets/common/custom_text_field.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 
 class EditPartBottomSheet extends StatefulWidget {
   final int partId;
@@ -77,22 +78,18 @@ class _EditPartBottomSheetState extends State<EditPartBottomSheet> {
     final intervalStr = _intervalController.text.trim();
 
     if (name.isEmpty || manufacturer.isEmpty || model.isEmpty || intervalStr.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('모든 필드를 입력해주세요.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '모든 필드를 입력해주세요.',
       );
       return;
     }
 
     final interval = int.tryParse(intervalStr);
     if (interval == null || interval <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('정비 주기는 1 이상의 숫자여야 합니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '정비 주기는 1 이상의 숫자여야 합니다.',
       );
       return;
     }

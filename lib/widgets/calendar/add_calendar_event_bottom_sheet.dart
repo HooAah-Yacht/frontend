@@ -5,10 +5,12 @@ import 'dart:convert';
 import 'package:frontend/widgets/common/custom_text_field.dart';
 import 'package:frontend/widgets/common/custom_picker.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/services/yacht_service.dart';
 import 'package:frontend/services/part_service.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/services/calendar_service.dart';
+import 'package:frontend/screens/calendar_review_screen.dart';
 import 'package:http/http.dart' as http;
 
 class AddCalendarEventBottomSheet extends StatefulWidget {
@@ -34,6 +36,7 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
   String? _selectedYachtDisplay;
   List<Map<String, dynamic>> _yachtList = [];
   bool _isLoadingYachts = true;
+  String? _yachtError;
   
   // 일정 구분
   String? _selectedType;
@@ -46,6 +49,7 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
   String? _selectedPartId;
   String? _selectedPartName;
   bool _isLoadingParts = false;
+  String? _partError;
   
   // 내용
   final TextEditingController _contentController = TextEditingController();
@@ -57,17 +61,19 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
   // 시작 날짜/시간
   DateTime? _startDate;
   TimeOfDay? _startTime;
+  String? _startDateError;
   
   // 종료 날짜/시간
   DateTime? _endDate;
   TimeOfDay? _endTime;
+  String? _endDateError;
   
   // 참조인 (email을 식별자로 사용)
   List<String> _selectedCc = [];
-  List<String> _tempSelectedCc = []; // 임시 선택 (완료 버튼 누르면 반영)
+  List<String> _tempSelectedCc = [];
   List<Map<String, dynamic>> _memberList = [];
   bool _isLoadingMembers = true;
-  String? _currentUserEmail; // 현재 사용자 email
+  String? _currentUserEmail;
 
   @override
   void initState() {
@@ -75,7 +81,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
     _loadInitialData();
     
     if (widget.initialData == null) {
-      // 등록 모드: 기본값 설정
       final now = DateTime.now();
       _startDate = DateTime(now.year, now.month, now.day);
       _endDate = DateTime(now.year, now.month, now.day);
@@ -114,7 +119,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       }
     });
     
-    // 요트 목록 로드 후 초기화
     final yachtId = data['yachtId'] as int?;
     if (yachtId != null && _yachtList.isNotEmpty) {
       final yacht = _yachtList.firstWhere(
@@ -124,7 +128,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       if (yacht.isNotEmpty) {
         _onYachtSelected(yacht);
         
-        // 부품 정보 설정
         final partId = data['partId'] as int?;
         if (partId != null && _selectedType == '정비') {
           await _loadPartList(yachtId);
@@ -166,19 +169,13 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
 
   Future<void> _loadInitialData() async {
     await _loadCurrentUser();
-    await Future.wait([
-      _loadYachtList(),
-    ]);
+    await _loadYachtList();
   }
 
-  // 현재 사용자 정보를 가져와서 참조인 선택 시 본인을 제외하기 위해 사용
-  // 참조인은 작성자인 나를 제외한 다른 멤버만 선택할 수 있어야 함
   Future<void> _loadCurrentUser() async {
     try {
       final token = await AuthService.getToken();
-      if (token == null || token.isEmpty) {
-        return;
-      }
+      if (token == null || token.isEmpty) return;
 
       final url = '${AuthService.baseUrl}/api/user';
       final response = await http.get(
@@ -216,13 +213,10 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
         _isLoadingYachts = false;
       });
       
-      // 요트 목록이 있으면 처리
       if (_yachtList.isNotEmpty) {
-        // 수정 모드이고 요트 ID가 있으면 해당 요트 선택
         if (widget.initialData != null) {
           await _initializeFromData(widget.initialData!);
         } else {
-          // 등록 모드: 첫 번째 요트 선택
           _onYachtSelected(_yachtList.first);
         }
       }
@@ -250,7 +244,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       final yachtId = int.tryParse(_selectedYachtId ?? '');
       if (yachtId != null) {
         final members = await YachtService.getYachtUserList(yachtId);
-        
         setState(() {
           _memberList = members;
           _isLoadingMembers = false;
@@ -309,7 +302,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
     }
   }
   
-  // 타입 표시값을 API 값으로 변환
   String? _convertTypeToApiValue(String? displayType) {
     if (displayType == null) return null;
     switch (displayType) {
@@ -334,11 +326,12 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       _selectedYachtDisplay = yachtAlias != null && yachtAlias.isNotEmpty 
           ? '$yachtAlias[$yachtName]' 
           : yachtName;
-      // 수정 모드가 아니면 타입 초기화
+      _yachtError = null;
       if (widget.initialData == null) {
         _selectedType = null;
         _selectedPartId = null;
         _selectedPartName = null;
+        _partError = null;
       }
     });
     
@@ -359,19 +352,19 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       setState(() {
         if (isStartTime) {
           _startTime = picked;
+          _startDateError = null;
         } else {
           _endTime = picked;
+          _endDateError = null;
         }
       });
     }
   }
 
-  // 변경사항이 있는지 확인
   bool _hasChanges() {
-    if (widget.initialData == null) return true; // 등록 모드는 항상 변경사항 있음
+    if (widget.initialData == null) return true;
     
     final original = widget.initialData!;
-    
     final apiType = _convertTypeToApiValue(_selectedType);
     final originalType = original['type'] as String?;
     if (apiType != originalType) return true;
@@ -438,55 +431,19 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
     return false;
   }
 
-  Future<void> _handleSubmit() async {
-    // 수정 모드이고 변경사항이 없으면 그냥 닫기
-    if (widget.initialData != null && !_hasChanges()) {
-      Navigator.of(context).pop();
-      return;
-    }
-    
-    // 수정 모드이고 변경사항이 있으면 확인 다이얼로그
-    if (widget.initialData != null && _hasChanges()) {
-      final shouldProceed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('일정 수정'),
-          content: const Text('정말 수정하시겠습니까?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('수정'),
-            ),
-          ],
-        ),
-      );
-      
-      if (shouldProceed != true) {
-        return;
-      }
-    }
-    
-    // 에러 메시지 초기화
-    setState(() {
-      _typeError = null;
-      _contentError = null;
-    });
-
-    // 유효성 검사
+  // 유효성 검사 (참조인 제외)
+  bool _validateInputs() {
     bool hasError = false;
 
     if (_selectedYachtId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('요트를 선택해주세요.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() {
+        _yachtError = '요트를 선택해주세요.';
+      });
       hasError = true;
+    } else {
+      setState(() {
+        _yachtError = null;
+      });
     }
 
     if (_selectedType == null) {
@@ -494,17 +451,21 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
         _typeError = '일정 구분을 선택해주세요.';
       });
       hasError = true;
+    } else {
+      setState(() {
+        _typeError = null;
+      });
     }
     
-    // 정비 선택 시 부품 선택 필수
     if (_selectedType == '정비' && _selectedPartId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('정비를 선택한 경우 부품을 선택해주세요.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() {
+        _partError = '부품을 선택해주세요.';
+      });
       hasError = true;
+    } else {
+      setState(() {
+        _partError = null;
+      });
     }
 
     if (_contentController.text.trim().isEmpty) {
@@ -512,32 +473,53 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
         _contentError = '내용을 입력해주세요.';
       });
       hasError = true;
+    } else {
+      setState(() {
+        _contentError = null;
+      });
     }
 
-    if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('시작 날짜와 종료 날짜를 선택해주세요.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (_startDate == null) {
+      setState(() {
+        _startDateError = '시작 날짜를 선택해주세요.';
+      });
+      hasError = true;
+    } else {
+      setState(() {
+        _startDateError = null;
+      });
+    }
+
+    if (_endDate == null) {
+      setState(() {
+        _endDateError = '종료 날짜를 선택해주세요.';
+      });
+      hasError = true;
+    } else {
+      setState(() {
+        _endDateError = null;
+      });
+    }
+
+    if (!_allDay && _startTime == null) {
+      setState(() {
+        _startDateError = '시작 시간을 선택해주세요.';
+      });
       hasError = true;
     }
 
-    if (!_allDay && (_startTime == null || _endTime == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('시작 시간과 종료 시간을 선택해주세요.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (!_allDay && _endTime == null) {
+      setState(() {
+        _endDateError = '종료 시간을 선택해주세요.';
+      });
       hasError = true;
     }
 
-    if (hasError) {
-      return;
-    }
+    return !hasError;
+  }
 
+  // 데이터 구성
+  Map<String, dynamic> _buildPayload() {
     final startDateTime = _allDay
         ? DateTime(_startDate!.year, _startDate!.month, _startDate!.day, 0, 0)
         : DateTime(
@@ -558,57 +540,537 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
             _endTime!.minute,
           );
 
-    // CalendarCreateRequest 형식에 맞춰서 데이터 구성
     final apiType = _convertTypeToApiValue(_selectedType);
     final yachtId = int.parse(_selectedYachtId!);
+    final startDateStr = startDateTime.toUtc().toIso8601String();
+    final endDateStr = endDateTime.toUtc().toIso8601String();
+    final contentStr = _contentController.text.trim();
+    final partId = _selectedPartId != null ? int.parse(_selectedPartId!) : null;
     
     final payload = {
       'type': apiType,
       'yachtId': yachtId,
-      'startDate': startDateTime.toUtc().toIso8601String(),
-      'endDate': endDateTime.toUtc().toIso8601String(),
+      'startDate': startDateStr,
+      'endDate': endDateStr,
       'completed': _completed,
-      'byUser': true, // 사용자가 직접 생성한 일정
-      'content': _contentController.text.trim(),
-      'partId': _selectedPartId != null ? int.parse(_selectedPartId!) : null,
+      'byUser': true,
+      'content': contentStr,
+      'partId': partId,
     };
 
-    // JSON 형식으로 콘솔에 출력
-    const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('일정 등록 JSON:');
-    debugPrint(encoder.convert(payload));
+    // 수정 모드일 때 calendarId 추가
+    if (widget.initialData != null) {
+      final calendarId = widget.initialData!['id'] as int?;
+      if (calendarId != null) {
+        payload['id'] = calendarId;
+      }
+    }
 
-    // API 호출
+    return payload;
+  }
+
+  // 등록 모드: 정비 타입일 때 다이얼로그
+  Future<bool> _showPartScheduleUpdateDialog() async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text('일정을 등록하고 부품의 최근 정비일을 업데이트하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('등록'),
+          ),
+        ],
+      ),
+    );
+    return shouldProceed ?? false;
+  }
+
+  // 등록 모드: 일반 타입일 때 다이얼로그
+  Future<bool> _showCreateDialog() async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text('일정을 등록하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('등록'),
+          ),
+        ],
+      ),
+    );
+    return shouldProceed ?? false;
+  }
+
+  // 수정 모드: 정비 타입일 때 다이얼로그
+  Future<bool> _showPartUpdateAndReviewDialog() async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text('일정을 업데이트하고 후기를 작성하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+    return shouldProceed ?? false;
+  }
+
+  // 수정 모드: 완료 여부가 false이고 정비 타입일 때 다이얼로그
+  Future<bool> _showPartScheduleChangeDialog() async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text('부품에 대한 일정이 이미 존재합니다 일정을 변경하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('변경'),
+          ),
+        ],
+      ),
+    );
+    return shouldProceed ?? false;
+  }
+
+  // 수정 모드: 일반 타입일 때 다이얼로그
+  Future<bool> _showReviewDialog() async {
+    final isPartType = _selectedType == '정비';
+    final message = isPartType
+        ? '정비를 마치셨군요! 최근 정비일과 예상 정비일이 자동 업데이트됩니다. 후기를 작성해주세요'
+        : '일정을 마치셨군요! 후기를 작성해주세요';
+    
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+    return shouldProceed ?? false;
+  }
+
+  // 후기 화면으로 이동 (수정 모드용)
+  void _navigateToReviewScreen(Map<String, dynamic> payload) {
+    final currentContext = context;
+    // bottom sheet를 닫지 않고 바로 후기 화면으로 이동
+    // bottom sheet는 후기 화면에서 돌아올 때 닫음
+    Navigator.of(currentContext).push(
+      MaterialPageRoute(
+        builder: (context) => CalendarReviewScreen(
+          calendarData: payload,
+        ),
+      ),
+    ).then((result) {
+      // 후기 화면에서 업데이트 성공 시
+      if (result == true && currentContext.mounted) {
+        // 상위 화면(calendar_detail_screen 또는 calendar_screen)에서 데이터 새로고침을 위해 결과 전달
+        // 수정 모드에서만 필요
+        if (widget.initialData != null) {
+          widget.onSubmit(payload);
+        }
+        // bottom sheet 닫기
+        Navigator.of(currentContext).pop('updated');
+      } else if (currentContext.mounted) {
+        // 후기 화면에서 취소했을 때는 bottom sheet만 닫기
+        Navigator.of(currentContext).pop();
+      }
+    });
+  }
+
+  // 후기 화면으로 이동 (등록 모드용: 후기 작성 후 일정 등록)
+  void _navigateToReviewScreenForRegistration(Map<String, dynamic> payload) {
+    final currentContext = context;
+    // bottom sheet를 닫지 않고 바로 후기 화면으로 이동
+    Navigator.of(currentContext).push(
+      MaterialPageRoute(
+        builder: (context) => CalendarReviewScreen(
+          calendarData: payload,
+        ),
+      ),
+    ).then((result) {
+      // 후기 화면에서 등록하기 또는 나중에 하기 클릭 시
+      if (result == true && currentContext.mounted) {
+        // 일정 등록
+        _registerCalendarAfterReview(payload);
+      } else if (currentContext.mounted) {
+        // 후기 화면에서 취소했을 때는 bottom sheet만 닫기
+        Navigator.of(currentContext).pop();
+      }
+    });
+  }
+
+  // 후기 작성 후 일정 등록
+  Future<void> _registerCalendarAfterReview(Map<String, dynamic> payload) async {
     final result = await CalendarService.createCalendar(
-      type: apiType!,
-      yachtId: yachtId,
-      startDate: startDateTime.toUtc().toIso8601String(),
-      endDate: endDateTime.toUtc().toIso8601String(),
-      completed: _completed,
-      byUser: true,
-      content: _contentController.text.trim(),
-      partId: _selectedPartId != null ? int.parse(_selectedPartId!) : null,
+      type: payload['type'] as String,
+      yachtId: payload['yachtId'] as int,
+      startDate: payload['startDate'] as String,
+      endDate: payload['endDate'] as String,
+      completed: payload['completed'] as bool,
+      byUser: payload['byUser'] as bool,
+      content: payload['content'] as String,
+      partId: payload['partId'] as int?,
     );
 
     if (!mounted) return;
 
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일정이 등록되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
+      // 생성된 일정 정보를 payload에 병합
+      final createdCalendar = result['calendar'] as Map<String, dynamic>?;
+      if (createdCalendar != null) {
+        payload.addAll(createdCalendar);
+      }
+      
+      _printData(payload);
+      
+      // 일정 등록 직후 캘린더 화면 새로고침
+      widget.onSubmit(payload);
+      
+      // Snackbar 표시
+      CustomSnackBar.showSuccess(
+        context,
+        message: '일정이 등록되었습니다.',
       );
       
-      widget.onSubmit(payload);
-      Navigator.of(context).pop();
+      // bottom sheet 닫기
+      Navigator.of(context).pop('updated');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? '일정 등록에 실패했습니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: result['message'] ?? '일정 등록에 실패했습니다.',
       );
+    }
+  }
+
+  // 콘솔에 데이터 출력
+  void _printData(Map<String, dynamic> payload) {
+    const encoder = JsonEncoder.withIndent('  ');
+    print('========== 작성된 데이터 ==========');
+    print(encoder.convert(payload));
+    print('================================');
+  }
+
+  Future<void> _handleSubmit() async {
+    // 수정 모드이고 변경사항이 없으면 그냥 닫기
+    if (widget.initialData != null && !_hasChanges()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    // 유효성 검사
+    if (!_validateInputs()) {
+      return;
+    }
+
+    final payload = _buildPayload();
+    final isPartType = _selectedType == '정비';
+    final isEditMode = widget.initialData != null;
+    final isCompleted = payload['completed'] as bool;
+
+    if (isEditMode) {
+      // 수정 모드
+      final originalCompleted = widget.initialData!['completed'] as bool? ?? false;
+      final completedChanged = _completed != originalCompleted;
+      
+      if (isCompleted) {
+        // 완료 여부가 true인 경우
+        if (completedChanged && originalCompleted == false) {
+          // false => true: 강제로 후기 화면으로 이동
+          if (isPartType) {
+            // 정비 타입: 일정 업데이트 및 후기 작성 dialog
+            final shouldProceed = await _showPartUpdateAndReviewDialog();
+            if (!shouldProceed) return;
+          } else {
+            // 일반 타입: 후기 작성 dialog
+            final shouldProceed = await _showReviewDialog();
+            if (!shouldProceed) return;
+          }
+
+          // 일정 수정
+          final calendarId = widget.initialData!['id'] as int?;
+          if (calendarId == null) {
+            if (mounted) {
+              CustomSnackBar.showError(
+                context,
+                message: '일정 ID가 없습니다.',
+              );
+            }
+            return;
+          }
+
+          final result = await CalendarService.updateCalendar(
+            calendarId: calendarId,
+            type: payload['type'] as String,
+            yachtId: payload['yachtId'] as int,
+            startDate: payload['startDate'] as String,
+            endDate: payload['endDate'] as String,
+            completed: payload['completed'] as bool,
+            byUser: payload['byUser'] as bool,
+            content: payload['content'] as String,
+            partId: payload['partId'] as int?,
+          );
+
+          if (!mounted) return;
+
+          if (result['success'] == true) {
+            _printData(payload);
+            _navigateToReviewScreen(payload);
+          } else {
+            CustomSnackBar.showError(
+              context,
+              message: result['message'] ?? '일정 수정에 실패했습니다.',
+            );
+          }
+        } else {
+          // true => true: 후기 수정 선택 다이얼로그
+          final shouldEditReview = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('일정 수정'),
+              content: const Text('세부 사항이 변경되었습니다. 후기도 수정하시겠습니까?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('아니요'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('수정'),
+                ),
+              ],
+            ),
+          );
+
+          // 일정 수정
+          final calendarId = widget.initialData!['id'] as int?;
+          if (calendarId == null) {
+            if (mounted) {
+              CustomSnackBar.showError(
+                context,
+                message: '일정 ID가 없습니다.',
+              );
+            }
+            return;
+          }
+
+          final result = await CalendarService.updateCalendar(
+            calendarId: calendarId,
+            type: payload['type'] as String,
+            yachtId: payload['yachtId'] as int,
+            startDate: payload['startDate'] as String,
+            endDate: payload['endDate'] as String,
+            completed: payload['completed'] as bool,
+            byUser: payload['byUser'] as bool,
+            content: payload['content'] as String,
+            partId: payload['partId'] as int?,
+          );
+
+          if (!mounted) return;
+
+          if (result['success'] == true) {
+            _printData(payload);
+            if (shouldEditReview == true) {
+              // 후기 수정 선택: 후기 화면으로 이동
+              _navigateToReviewScreen(payload);
+            } else {
+              // 후기 수정 안 함: 바로 업데이트 완료
+              CustomSnackBar.showSuccess(
+                context,
+                message: '일정이 수정되었습니다.',
+              );
+              widget.onSubmit(payload);
+              Navigator.of(context).pop('updated');
+            }
+          } else {
+            CustomSnackBar.showError(
+              context,
+              message: result['message'] ?? '일정 수정에 실패했습니다.',
+            );
+          }
+        }
+      } else {
+        // 완료 여부가 false인 경우
+        if (isPartType) {
+          // 정비 타입: 부품 일정 변경 dialog
+          final shouldProceed = await _showPartScheduleChangeDialog();
+          if (!shouldProceed) return;
+        } else {
+          // 일반 타입: 일반 수정 확인 dialog
+          final shouldProceed = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('일정 수정'),
+              content: const Text('정말 수정하시겠습니까?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('취소'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('수정'),
+                ),
+              ],
+            ),
+          );
+          if (shouldProceed != true) return;
+        }
+
+        // 일정 수정
+        final calendarId = widget.initialData!['id'] as int?;
+        if (calendarId == null) {
+          if (mounted) {
+            CustomSnackBar.showError(
+              context,
+              message: '일정 ID가 없습니다.',
+            );
+          }
+          return;
+        }
+
+        final result = await CalendarService.updateCalendar(
+          calendarId: calendarId,
+          type: payload['type'] as String,
+          yachtId: payload['yachtId'] as int,
+          startDate: payload['startDate'] as String,
+          endDate: payload['endDate'] as String,
+          completed: payload['completed'] as bool,
+          byUser: payload['byUser'] as bool,
+          content: payload['content'] as String,
+          partId: payload['partId'] as int?,
+        );
+
+        if (!mounted) return;
+
+        if (result['success'] == true) {
+          _printData(payload);
+          CustomSnackBar.showSuccess(
+            context,
+            message: '일정이 수정되었습니다.',
+          );
+          widget.onSubmit(payload);
+          Navigator.of(context).pop('updated');
+        } else {
+          CustomSnackBar.showError(
+            context,
+            message: result['message'] ?? '일정 수정에 실패했습니다.',
+          );
+        }
+      }
+    } else {
+      // 등록 모드
+      if (isCompleted) {
+        // 완료 여부가 true인 경우: 후기 작성 후 일정 등록
+        if (isPartType) {
+          // 정비 타입: 일정 업데이트 및 후기 작성 dialog
+          final shouldProceed = await _showPartScheduleUpdateDialog();
+          if (!shouldProceed) return;
+        } else {
+          // 일반 타입: 후기 작성 dialog
+          final shouldProceed = await _showReviewDialog();
+          if (!shouldProceed) return;
+        }
+
+        // 후기 화면으로 이동 (일정 등록 전)
+        _navigateToReviewScreenForRegistration(payload);
+      } else {
+        // 완료 여부가 false인 경우
+        if (isPartType) {
+          // 정비 타입: 일정 업데이트 dialog
+          final shouldProceed = await _showPartScheduleUpdateDialog();
+          if (!shouldProceed) return;
+
+          final result = await CalendarService.createCalendar(
+            type: payload['type'] as String,
+            yachtId: payload['yachtId'] as int,
+            startDate: payload['startDate'] as String,
+            endDate: payload['endDate'] as String,
+            completed: payload['completed'] as bool,
+            byUser: payload['byUser'] as bool,
+            content: payload['content'] as String,
+            partId: payload['partId'] as int?,
+          );
+
+          if (!mounted) return;
+
+          if (result['success'] == true) {
+            // 부품의 최근 정비일 업데이트는 백엔드에서 처리됨 (completed=true일 때만)
+            widget.onSubmit(payload);
+            Navigator.of(context).pop();
+            CustomSnackBar.showSuccess(
+              context,
+              message: '일정이 등록되었습니다.',
+            );
+          } else {
+            CustomSnackBar.showError(
+              context,
+              message: result['message'] ?? '일정 등록에 실패했습니다.',
+            );
+          }
+        } else {
+          // 일반 타입: 등록 dialog
+          final shouldProceed = await _showCreateDialog();
+          if (!shouldProceed) return;
+
+          final result = await CalendarService.createCalendar(
+            type: payload['type'] as String,
+            yachtId: payload['yachtId'] as int,
+            startDate: payload['startDate'] as String,
+            endDate: payload['endDate'] as String,
+            completed: payload['completed'] as bool,
+            byUser: payload['byUser'] as bool,
+            content: payload['content'] as String,
+            partId: payload['partId'] as int?,
+          );
+
+          if (!mounted) return;
+
+          if (result['success'] == true) {
+            _printData(payload);
+            widget.onSubmit(payload);
+            Navigator.of(context).pop();
+            CustomSnackBar.showSuccess(
+              context,
+              message: '일정이 등록되었습니다.',
+            );
+          } else {
+            CustomSnackBar.showError(
+              context,
+              message: result['message'] ?? '일정 등록에 실패했습니다.',
+            );
+          }
+        }
+      }
     }
   }
 
@@ -714,6 +1176,17 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                         }
                       },
                     ),
+                  if (_yachtError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _yachtError!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        letterSpacing: -0.5,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   
                   // 일정 구분
@@ -727,13 +1200,12 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                       onSelected: (value) {
                         setState(() {
                           _selectedType = value;
-                          _typeError = null; // 선택 시 에러 메시지 제거
-                          // 정비가 아닌 경우 부품 선택 초기화
+                          _typeError = null;
                           if (value != '정비') {
                             _selectedPartId = null;
                             _selectedPartName = null;
+                            _partError = null;
                           } else {
-                            // 정비 선택 시 부품 목록 로드
                             final yachtId = int.tryParse(_selectedYachtId ?? '');
                             if (yachtId != null && _partList.isEmpty) {
                               _loadPartList(yachtId);
@@ -775,20 +1247,32 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                           setState(() {
                             _selectedPartName = value;
                             _selectedPartId = partId?.toString();
+                            _partError = null;
                           });
                         },
                       ),
+                    if (_partError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _partError!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          letterSpacing: -0.5,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 12),
                   
-                  // 제목
+                  // 내용
                   CustomTextField(
                     controller: _contentController,
                     hintText: '내용',
                     onChanged: (value) {
                       if (_contentError != null && value.trim().isNotEmpty) {
                         setState(() {
-                          _contentError = null; // 입력 시 에러 메시지 제거
+                          _contentError = null;
                         });
                       }
                     },
@@ -836,7 +1320,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                               onTap: () {
                                 setState(() {
                                   _allDay = !_allDay;
-                                  // 하루종일이 활성화되면 시간을 자동으로 설정
                                   if (_allDay) {
                                     _startTime = const TimeOfDay(hour: 0, minute: 0);
                                     _endTime = const TimeOfDay(hour: 23, minute: 59);
@@ -904,6 +1387,7 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                                           onDateSelected: (date) {
                                             setState(() {
                                               _startDate = DateTime(date.year, date.month, date.day);
+                                              _startDateError = null;
                                             });
                                             Navigator.of(sheetContext).pop(date);
                                           },
@@ -956,6 +1440,17 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                             ),
                           ],
                         ),
+                        if (_startDateError != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            _startDateError!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              letterSpacing: -0.5,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         
                         // 종료 날짜
@@ -988,6 +1483,7 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                                           onDateSelected: (date) {
                                             setState(() {
                                               _endDate = DateTime(date.year, date.month, date.day);
+                                              _endDateError = null;
                                             });
                                             Navigator.of(sheetContext).pop(date);
                                           },
@@ -1040,6 +1536,17 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                             ),
                           ],
                         ),
+                        if (_endDateError != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            _endDateError!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              letterSpacing: -0.5,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1149,16 +1656,13 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
 
   Future<void> _showMemberPicker(BuildContext context) async {
     if (_selectedYachtId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('먼저 요트를 선택해주세요.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '먼저 요트를 선택해주세요.',
       );
       return;
     }
 
-    // 현재 선택된 값으로 임시 선택 초기화
     _tempSelectedCc = List<String>.from(_selectedCc);
 
     await showModalBottomSheet<void>(
@@ -1167,7 +1671,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (sheetContext) {
-        // 현재 사용자 제외한 멤버 목록
         final filteredMembers = _memberList.where((member) {
           final email = member['email'] as String? ?? '';
           return email.isNotEmpty && email != _currentUserEmail;
@@ -1193,7 +1696,6 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
                         ),
                         TextButton(
                           onPressed: () {
-                            // 완료 버튼: 임시 선택을 실제 선택으로 반영
                             setState(() {
                               _selectedCc = List<String>.from(_tempSelectedCc);
                             });
@@ -1450,4 +1952,3 @@ class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
     );
   }
 }
-

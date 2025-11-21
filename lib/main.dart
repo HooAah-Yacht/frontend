@@ -3,6 +3,7 @@ import 'package:frontend/screens/login_screen.dart';
 import 'package:frontend/screens/main_screen.dart';
 import 'package:frontend/screens/notice_screen.dart';
 import 'package:frontend/screens/sign_in_screen.dart';
+import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/services/auth_service.dart';
 
 // RouteObserver를 전역으로 선언
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/signin': (context) => const SignInScreen(),
         '/home': (context) => const MainScreen(),
         '/notice': (context) => const NoticeScreen(),
+        '/settings': (context) => const SettingsScreen(),
       },
       initialRoute: '/',
     );

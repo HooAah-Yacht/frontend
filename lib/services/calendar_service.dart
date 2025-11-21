@@ -52,6 +52,21 @@ class CalendarService {
       print('일정 등록 응답 본문: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        // 응답에서 생성된 일정 정보 추출
+        try {
+          final Map<String, dynamic> data = jsonDecode(response.body);
+          final Map<String, dynamic>? responseData = data['response'] as Map<String, dynamic>?;
+          
+          if (responseData != null) {
+            return {
+              'success': true,
+              'calendar': responseData,
+            };
+          }
+        } catch (e) {
+          print('일정 등록 응답 파싱 오류: $e');
+        }
+        
         return {'success': true};
       } else {
         String errorMessage = '일정 등록에 실패했습니다.';

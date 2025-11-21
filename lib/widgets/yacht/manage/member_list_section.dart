@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:frontend/services/yacht_service.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 
 class MemberListSection extends StatefulWidget {
   final int yachtId;
@@ -69,10 +70,9 @@ class _MemberListSectionState extends State<MemberListSection> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('공유 기능을 사용할 수 없습니다.'),
-          ),
+        CustomSnackBar.show(
+          context,
+          message: '공유 기능을 사용할 수 없습니다.',
         );
       }
     }

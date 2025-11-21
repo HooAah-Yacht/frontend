@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../widgets/common/custom_app_bar.dart';
+import '../widgets/common/custom_snackbar.dart';
 import '../widgets/signin/signin_button.dart';
 import '../widgets/signin/signin_input_fields.dart';
 import '../widgets/signin/signin_login_link.dart';
@@ -87,11 +88,9 @@ class _SignInScreenState extends State<SignInScreen> {
 
     final String email = _emailController.text.trim();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('이메일을 입력해주세요.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '이메일을 입력해주세요.',
       );
       return;
     }
@@ -101,11 +100,9 @@ class _SignInScreenState extends State<SignInScreen> {
     ).hasMatch(email);
 
     if (!isValidEmail) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('올바른 이메일 형식이 아닙니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '올바른 이메일 형식이 아닙니다.',
       );
       return;
     }
@@ -150,19 +147,19 @@ class _SignInScreenState extends State<SignInScreen> {
           _isEmailVerified;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success && !isDuplicate
-              ? '사용 가능한 이메일입니다.'
-              : success && isDuplicate
-                  ? '이미 사용 중인 이메일입니다.'
-                  : message,
-        ),
-        backgroundColor:
-            success && !isDuplicate ? Colors.green : Colors.red,
-      ),
-    );
+    if (success && !isDuplicate) {
+      CustomSnackBar.showSuccess(
+        context,
+        message: '사용 가능한 이메일입니다.',
+      );
+    } else {
+      CustomSnackBar.showError(
+        context,
+        message: success && isDuplicate
+            ? '이미 사용 중인 이메일입니다.'
+            : message,
+      );
+    }
   }
 
   // 회원가입 버튼 클릭 함수
@@ -174,22 +171,18 @@ class _SignInScreenState extends State<SignInScreen> {
 
     // 비밀번호 유효성 검사
     if (!_isPasswordValid(password)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('비밀번호가 양식에 맞지 않습니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '비밀번호가 양식에 맞지 않습니다.',
       );
       return;
     }
 
     // 비밀번호 확인 검사
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('비밀번호 확인란과 비밀번호 란이 일치하지 않습니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '비밀번호 확인란과 비밀번호 란이 일치하지 않습니다.',
       );
       return;
     }
@@ -211,21 +204,17 @@ class _SignInScreenState extends State<SignInScreen> {
     });
 
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('회원가입이 완료되었습니다. 로그인해주세요.'),
-          backgroundColor: Colors.green,
-        ),
+      CustomSnackBar.showSuccess(
+        context,
+        message: '회원가입이 완료되었습니다. 로그인해주세요.',
       );
       Navigator.pop(context);
     } else {
       final String message =
           result['message'] as String? ?? '회원가입에 실패했습니다.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: message,
       );
     }
   }

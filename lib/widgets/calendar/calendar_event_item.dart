@@ -11,6 +11,7 @@ class CalendarEventItem extends StatelessWidget {
     required this.completed,
     this.calendarData,
     this.onDeleted,
+    this.onUpdated,
   });
 
   final String type;
@@ -20,6 +21,7 @@ class CalendarEventItem extends StatelessWidget {
   final bool completed;
   final Map<String, dynamic>? calendarData;
   final VoidCallback? onDeleted;
+  final VoidCallback? onUpdated;
 
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour.toString().padLeft(2, '0');
@@ -64,9 +66,15 @@ class CalendarEventItem extends StatelessWidget {
               ),
             ),
           ).then((result) {
-            // 삭제 성공 시 목록 새로고침
-            if (result == true && context.mounted) {
-              onDeleted?.call();
+            // 삭제 또는 수정 시 목록 새로고침
+            if (context.mounted) {
+              if (result == true) {
+                // 삭제 성공
+                onDeleted?.call();
+              } else if (result == 'updated') {
+                // 수정 성공
+                onUpdated?.call();
+              }
             }
           });
         }

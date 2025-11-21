@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/common/bottom_navigation.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/screens/home_screen.dart' show HomeScreenContent;
 import 'package:frontend/screens/yacht_manage_screen.dart' show YachtManageScreenContent;
 import 'package:frontend/screens/calendar_screen.dart' show CalendarScreenContent;
+import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/services/yacht_service.dart';
 
 class MainScreen extends StatefulWidget {
@@ -16,6 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   HooaahTab _currentTab = HooaahTab.home;
   List<Map<String, dynamic>> _yachtList = [];
   String? _selectedYachtNameForNavigation;
+  VoidCallback? _calendarRefreshCallback;
 
   @override
   void initState() {
@@ -37,6 +40,11 @@ class _MainScreenState extends State<MainScreen> {
     _loadYachtList();
   }
 
+  // 캘린더 새로고침을 위한 공개 메서드
+  void refreshCalendar() {
+    _calendarRefreshCallback?.call();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -52,22 +60,19 @@ class _MainScreenState extends State<MainScreen> {
     // 요트 탭 클릭 시 리스트 확인
     if (tab == HooaahTab.yacht) {
       if (_yachtList.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('등록된 요트가 없습니다.'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.showError(
+          context,
+          message: '등록된 요트가 없습니다.',
         );
         return;
       }
     }
 
-    // AI 탭과 설정 탭은 아직 구현되지 않음
-    if (tab == HooaahTab.ai || tab == HooaahTab.settings) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('해당 기능은 준비 중입니다.'),
-        ),
+    // AI 탭은 아직 구현되지 않음
+    if (tab == HooaahTab.ai) {
+      CustomSnackBar.show(
+        context,
+        message: '해당 기능은 준비 중입니다.',
       );
       return;
     }
@@ -107,8 +112,14 @@ class _MainScreenState extends State<MainScreen> {
               });
             },
             onYachtListRefresh: refreshYachtList,
+            onCalendarRefresh: refreshCalendar,
           ),
-          const CalendarScreenContent(),
+          CalendarScreenContent(
+            onRefreshCallbackRegistered: (callback) {
+              _calendarRefreshCallback = callback;
+            },
+          ),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar: HooaahBottomNavigation(
@@ -126,6 +137,8 @@ class _MainScreenState extends State<MainScreen> {
         return 1;
       case HooaahTab.calendar:
         return 2;
+      case HooaahTab.settings:
+        return 3;
       default:
         return 0;
     }

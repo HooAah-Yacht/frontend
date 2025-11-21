@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/common/top_bar.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/widgets/yacht/manage/yacht_manage_title.dart';
 import 'package:frontend/widgets/yacht/manage/yacht_picker_section.dart';
 import 'package:frontend/widgets/yacht/manage/parts_manage_button.dart';
@@ -13,6 +14,7 @@ class YachtManageScreenContent extends StatefulWidget {
   final String? initialSelectedYachtName;
   final ValueChanged<String>? onYachtSelected;
   final VoidCallback? onYachtListRefresh;
+  final VoidCallback? onCalendarRefresh;
 
   const YachtManageScreenContent({
     super.key,
@@ -20,6 +22,7 @@ class YachtManageScreenContent extends StatefulWidget {
     this.initialSelectedYachtName,
     this.onYachtSelected,
     this.onYachtListRefresh,
+    this.onCalendarRefresh,
   });
 
   @override
@@ -140,15 +143,19 @@ class _YachtManageScreenContentState extends State<YachtManageScreenContent> {
                       if (yachtId != null) {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => YachtPartScreen(yachtId: yachtId),
+                            builder: (_) => YachtPartScreen(
+                              yachtId: yachtId,
+                              onPartAdded: () {
+                                // 부품 등록 성공 시 캘린더 새로고침
+                                widget.onCalendarRefresh?.call();
+                              },
+                            ),
                           ),
                         );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('요트 정보를 찾을 수 없습니다.'),
-                            backgroundColor: Colors.red,
-                          ),
+                        CustomSnackBar.showError(
+                          context,
+                          message: '요트 정보를 찾을 수 없습니다.',
                         );
                       }
                     },

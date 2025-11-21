@@ -4,6 +4,7 @@ import 'package:frontend/services/repair_service.dart';
 import 'package:frontend/widgets/common/custom_button.dart';
 import 'package:frontend/widgets/common/custom_date_picker.dart';
 import 'package:frontend/widgets/common/custom_text_field.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 
 class RepairHistorySection extends StatefulWidget {
   final int partId;
@@ -94,21 +95,17 @@ class RepairHistorySectionState extends State<RepairHistorySection> {
               loadRepairList();
               
               // 성공 메시지 표시
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] as String? ?? '정비 이력이 추가되었습니다.'),
-                  backgroundColor: Colors.green,
-                ),
+              CustomSnackBar.showSuccess(
+                context,
+                message: result['message'] as String? ?? '정비 이력이 추가되었습니다.',
               );
               
               Navigator.of(sheetContext).pop();
             } else {
               // 에러 메시지 표시
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] as String? ?? '정비 이력 추가에 실패했습니다.'),
-                  backgroundColor: Colors.red,
-                ),
+              CustomSnackBar.showError(
+                context,
+                message: result['message'] as String? ?? '정비 이력 추가에 실패했습니다.',
               );
             }
           },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/services/calendar_service.dart';
 import 'package:frontend/widgets/calendar/add_calendar_event_bottom_sheet.dart';
 import 'package:frontend/widgets/calendar/calendar_content_header.dart';
@@ -99,19 +100,15 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     if (!mounted) return;
 
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일정이 삭제되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
+      CustomSnackBar.showSuccess(
+        context,
+        message: '일정이 삭제되었습니다.',
       );
       Navigator.of(context).pop(true); // 삭제 성공 시 true 반환
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? '일정 삭제에 실패했습니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: result['message'] ?? '일정 삭제에 실패했습니다.',
       );
     }
   }
@@ -119,7 +116,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
   void _showEditBottomSheet() {
     if (_calendarInfo == null) return;
 
-    showModalBottomSheet<void>(
+    showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -132,48 +129,25 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
         return AddCalendarEventBottomSheet(
           initialData: _calendarInfo,
           onSubmit: (data) async {
-            // 수정 API 호출
-            final calendarId = _calendarInfo?['id'] as int?;
-            if (calendarId == null) return;
-
-            final result = await CalendarService.updateCalendar(
-              calendarId: calendarId,
-              type: data['type'] as String,
-              yachtId: data['yachtId'] as int,
-              startDate: data['startDate'] as String,
-              endDate: data['endDate'] as String,
-              completed: data['completed'] as bool,
-              byUser: data['byUser'] as bool,
-              content: data['content'] as String,
-              partId: data['partId'] as int?,
-            );
-
-            if (!mounted) return;
-
-            if (result['success'] == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('일정이 수정되었습니다.'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              
-              // 일정 정보 새로고침
-              await _loadCalendarDetail();
-              
-              Navigator.of(sheetContext).pop();
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] ?? '일정 수정에 실패했습니다.'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+            // _handleSubmit에서 이미 API 호출을 처리하므로 여기서는 데이터 새로고침만 수행
+            // 일정 정보 새로고침
+            await _loadCalendarDetail();
+            // 상위 화면(캘린더 화면)에도 알림을 위해 'updated' 반환은
+            // _handleSubmit에서 Navigator.pop('updated')를 호출할 때 처리됨
           },
         );
       },
-    );
+    ).then((result) {
+      // 수정이 완료되면 상위 화면(캘린더 화면)에 알림
+      if (result == 'updated' && mounted) {
+        // 일정 정보 새로고침 (onSubmit에서 이미 호출했지만 확실하게)
+        _loadCalendarDetail();
+        // 상위 화면(캘린더 화면)에 알림
+        Navigator.of(context).pop('updated');
+      }
+      // result가 null이거나 다른 값일 때는 아무것도 하지 않음
+      // (후기 화면으로 이동한 경우는 _navigateToReviewScreen에서 처리)
+    });
   }
 
   @override

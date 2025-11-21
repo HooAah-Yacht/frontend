@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/widgets/auth/auth_logo.dart';
 import 'package:frontend/widgets/auth/auth_input_fields.dart';
 import 'package:frontend/widgets/auth/forgot_password_link.dart';
@@ -30,22 +31,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // 이메일 유효성 검사
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('이메일을 입력해주세요.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '이메일을 입력해주세요.',
       );
       return;
     }
 
     // 비밀번호 유효성 검사
     if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('비밀번호를 입력해주세요.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '비밀번호를 입력해주세요.',
       );
       return;
     }
@@ -64,11 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pushReplacementNamed('/home');
     } else {
       // 로그인 실패
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? '로그인에 실패했습니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: result['message'] ?? '로그인에 실패했습니다.',
       );
     }
   }

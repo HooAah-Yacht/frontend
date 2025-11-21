@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/common/custom_snackbar.dart';
 import '../widgets/yacht/create1/create_yacht_app_bar.dart';
 import '../widgets/yacht/create1/create_yacht_basic_info_section.dart';
 import '../widgets/yacht/create1/create_yacht_document_section.dart';
@@ -54,11 +55,9 @@ class _Create1YachtScreenState extends State<Create1YachtScreen> {
   void _handleNext(BuildContext context) {
     final selected = _selectedYacht;
     if (selected == null || selected.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('요트를 선택해주세요'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '요트를 선택해주세요',
       );
       return;
     }

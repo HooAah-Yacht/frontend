@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/common/custom_app_bar.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/widgets/yacht/parts/yacht_parts_page_title.dart';
 import 'package:frontend/widgets/yacht/parts/part_list_item.dart';
 import 'package:frontend/widgets/yacht/parts/add_part_button.dart';
@@ -8,10 +9,12 @@ import 'package:frontend/services/part_service.dart';
 
 class YachtPartScreen extends StatefulWidget {
   final int yachtId;
+  final VoidCallback? onPartAdded;
 
   const YachtPartScreen({
     super.key,
     required this.yachtId,
+    this.onPartAdded,
   });
 
   @override
@@ -86,20 +89,18 @@ class _YachtPartScreenState extends State<YachtPartScreen> {
             if (!mounted) return;
 
             if (result['success'] == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] as String? ?? '부품이 추가되었습니다.'),
-                  backgroundColor: Colors.green,
-                ),
+              CustomSnackBar.showSuccess(
+                context,
+                message: result['message'] as String? ?? '부품이 추가되었습니다.',
               );
               // 부품 리스트 새로고침
               _loadPartList();
+              // 부품 등록 성공 시 캘린더 새로고침 콜백 호출
+              widget.onPartAdded?.call();
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] as String? ?? '부품 추가에 실패했습니다.'),
-                  backgroundColor: Colors.red,
-                ),
+              CustomSnackBar.showError(
+                context,
+                message: result['message'] as String? ?? '부품 추가에 실패했습니다.',
               );
             }
           },

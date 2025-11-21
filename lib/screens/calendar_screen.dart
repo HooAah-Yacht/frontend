@@ -7,7 +7,12 @@ import 'package:frontend/services/calendar_service.dart';
 
 // MainScreen에서 사용할 content 위젯
 class CalendarScreenContent extends StatefulWidget {
-  const CalendarScreenContent({super.key});
+  final Function(VoidCallback)? onRefreshCallbackRegistered;
+  
+  const CalendarScreenContent({
+    super.key,
+    this.onRefreshCallbackRegistered,
+  });
 
   @override
   State<CalendarScreenContent> createState() => _CalendarScreenContentState();
@@ -21,6 +26,16 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
   @override
   void initState() {
     super.initState();
+    _loadCalendars();
+    // 부모 위젯에 refreshCalendars 함수를 등록
+    // WidgetsBinding을 사용하여 위젯 트리가 완전히 빌드된 후 등록
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onRefreshCallbackRegistered?.call(refreshCalendars);
+    });
+  }
+
+  // 외부에서 캘린더를 새로고침할 수 있는 공개 메서드
+  void refreshCalendars() {
     _loadCalendars();
   }
 
@@ -258,6 +273,9 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
                           completed: completed,
                           calendarData: calendar,
                           onDeleted: () {
+                            _loadCalendars();
+                          },
+                          onUpdated: () {
                             _loadCalendars();
                           },
                         ),

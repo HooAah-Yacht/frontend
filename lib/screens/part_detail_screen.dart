@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/widgets/yacht/parts/part_detail_section.dart';
 import 'package:frontend/widgets/yacht/parts/repair_history_section.dart';
 import 'package:frontend/widgets/yacht/parts/edit_part_bottom_sheet.dart';
@@ -89,20 +90,16 @@ class _PartDetailScreenState extends State<PartDetailScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] as String? ?? '부품이 삭제되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
+        CustomSnackBar.showSuccess(
+          context,
+          message: result['message'] as String? ?? '부품이 삭제되었습니다.',
         );
         widget.onPartDeleted?.call();
         Navigator.of(context).pop(true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] as String? ?? '부품 삭제에 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.showError(
+          context,
+          message: result['message'] as String? ?? '부품 삭제에 실패했습니다.',
         );
       }
     }
@@ -147,20 +144,16 @@ class _PartDetailScreenState extends State<PartDetailScreen> {
               // 정비 이력 새로고침
               _repairHistoryKey.currentState?.loadRepairList();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] as String? ?? '부품 정보가 수정되었습니다.'),
-                  backgroundColor: Colors.green,
-                ),
+              CustomSnackBar.showSuccess(
+                context,
+                message: result['message'] as String? ?? '부품 정보가 수정되었습니다.',
               );
 
               widget.onPartUpdated?.call();
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] as String? ?? '부품 수정에 실패했습니다.'),
-                  backgroundColor: Colors.red,
-                ),
+              CustomSnackBar.showError(
+                context,
+                message: result['message'] as String? ?? '부품 수정에 실패했습니다.',
               );
             }
           },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/common/custom_snackbar.dart';
 import '../widgets/yacht/create1/create_yacht_app_bar.dart';
 import '../models/yacht_part.dart';
 import '../widgets/yacht/create2/create_yacht_parts_page_title.dart';
@@ -124,11 +125,9 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
           _isRegistering = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? '요트 등록에 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
+        CustomSnackBar.showError(
+          context,
+          message: result['message'] ?? '요트 등록에 실패했습니다.',
         );
       }
     } catch (e) {
@@ -138,11 +137,9 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
         _isRegistering = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('요트 등록 중 오류가 발생했습니다.'),
-          backgroundColor: Colors.red,
-        ),
+      CustomSnackBar.showError(
+        context,
+        message: '요트 등록 중 오류가 발생했습니다.',
       );
     }
   }
