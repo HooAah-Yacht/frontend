@@ -34,6 +34,10 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+
+  kakao_flutter_sdk: ^1.9.5
+  
+  flutter_dotenv: ^5.1.1
   
   # For secure token storage
   flutter_secure_storage: ^9.2.2
@@ -50,6 +54,9 @@ dependencies:
   
   # For URL launching (sharing)
   url_launcher: ^6.2.5
+  
+  # For deep linking
+  app_links: ^6.3.3
   
   # For calendar widget
   table_calendar: ^3.1.2
@@ -75,6 +82,7 @@ flutter:
   assets:
     - assets/image/
     - assets/image/yacht/
+    - .env
   fonts:
     - family: NotoSans
       fonts:

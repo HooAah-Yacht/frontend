@@ -7,6 +7,9 @@ import 'package:frontend/screens/calendar_screen.dart' show CalendarScreenConten
 import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/services/yacht_service.dart';
 
+// MainScreen에 접근하기 위한 GlobalKey
+final GlobalKey<_MainScreenState> mainScreenKey = GlobalKey<_MainScreenState>();
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -44,6 +47,7 @@ class _MainScreenState extends State<MainScreen> {
   void refreshCalendar() {
     _calendarRefreshCallback?.call();
   }
+
 
   @override
   void didChangeDependencies() {

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:frontend/services/yacht_service.dart';
 import 'package:frontend/widgets/common/custom_snackbar.dart';
+import 'package:frontend/services/share/share_service_factory.dart';
+import 'package:frontend/widgets/yacht/share/share_method_dialog.dart';
 
 class MemberListSection extends StatefulWidget {
   final int yachtId;
@@ -47,32 +48,69 @@ class _MemberListSectionState extends State<MemberListSection> {
   }
 
   Future<void> _inviteMember(BuildContext context) async {
-    // 카카오톡 공유 기능
-    // TODO: 실제 초대 코드나 링크를 생성해야 함
-    final inviteMessage = '요트 관리 앱에 초대되었습니다!';
+    // 공유 방법 선택 다이얼로그 먼저 표시
+    if (!context.mounted) return;
+    
+    final shareMethod = await ShareMethodDialog.show(context);
+    if (shareMethod == null) return;
 
     try {
-      // 카카오톡 스킴으로 공유 시도
-      final kakaoUrl = Uri.parse('kakaotalk://');
-      if (await canLaunchUrl(kakaoUrl)) {
-        // 카카오톡이 설치되어 있으면 공유
-        // 실제로는 카카오톡 SDK를 사용하거나 다른 방법 필요
-        await launchUrl(
-          Uri.parse('sms:?body=$inviteMessage'),
-          mode: LaunchMode.externalApplication,
+      // 초대 코드 조회
+      setState(() {
+        _isLoading = true;
+      });
+
+      final result = await YachtService.getInviteCode(widget.yachtId);
+      
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (!result['success']) {
+        if (context.mounted) {
+          CustomSnackBar.showError(
+            context,
+            message: result['message'] as String? ?? '초대 코드를 가져올 수 없습니다.',
+          );
+        }
+        return;
+      }
+
+      final code = result['code'] as int;
+      final deepLinkUrl = 'hooaah://invite?code=$code';
+
+      // 카카오톡 공유 실행
+      print('🔵 카카오톡 공유 시작: $deepLinkUrl');
+      final shareService = ShareServiceFactory.create(shareMethod);
+      final success = await shareService.shareInviteLink(
+        deepLinkUrl: deepLinkUrl,
+      );
+      print('🔵 카카오톡 공유 결과: $success');
+
+      if (!context.mounted) {
+        print('🔴 context가 mounted되지 않음');
+        return;
+      }
+
+      print('🔵 success 체크: $success');
+      if (!success) {
+        print('🔴 공유 실패 - 에러 메시지 표시');
+        CustomSnackBar.showError(
+          context,
+          message: '카카오톡이 설치되어 있지 않거나 공유를 사용할 수 없습니다.',
         );
       } else {
-        // 카카오톡이 없으면 SMS로 대체
-        await launchUrl(
-          Uri.parse('sms:?body=$inviteMessage'),
-          mode: LaunchMode.externalApplication,
-        );
+        print('🟢 공유 성공');
       }
     } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
       if (context.mounted) {
-        CustomSnackBar.show(
+        CustomSnackBar.showError(
           context,
-          message: '공유 기능을 사용할 수 없습니다.',
+          message: '초대 코드를 가져오는 중 오류가 발생했습니다.',
         );
       }
     }
