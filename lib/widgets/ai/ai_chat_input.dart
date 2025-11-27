@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class AiChatInput extends StatefulWidget {
-  const AiChatInput({super.key});
+  final Function(String)? onSendMessage;
+  final bool isLoading;
+
+  const AiChatInput({
+    super.key,
+    this.onSendMessage,
+    this.isLoading = false,
+  });
 
   @override
   State<AiChatInput> createState() => _AiChatInputState();
@@ -18,9 +25,8 @@ class _AiChatInputState extends State<AiChatInput> {
 
   void _handleSend() {
     final message = _messageController.text.trim();
-    if (message.isNotEmpty) {
-      // TODO: 메시지 전송 로직 구현
-      print('메시지 전송: $message');
+    if (message.isNotEmpty && !widget.isLoading) {
+      widget.onSendMessage?.call(message);
       _messageController.clear();
     }
   }
@@ -76,16 +82,27 @@ class _AiChatInputState extends State<AiChatInput> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF2B4184),
+              color: widget.isLoading 
+                  ? const Color(0xFFB0B8C1)
+                  : const Color(0xFF2B4184),
               borderRadius: BorderRadius.circular(50),
             ),
             child: GestureDetector(
-              onTap: _handleSend,
-              child: const Icon(
-                Icons.send,
-                color: Colors.white,
-                size: 20,
-              ),
+              onTap: widget.isLoading ? null : _handleSend,
+              child: widget.isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 20,
+                    ),
             ),
           ),
         ],

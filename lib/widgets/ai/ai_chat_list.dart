@@ -18,7 +18,7 @@ class AiChatList extends StatelessWidget {
         color: Colors.white,
         child: const Center(
           child: Text(
-            'AI 채팅 내역이 없습니다.',
+            '메시지가 없습니다.',
             style: TextStyle(
               fontSize: 16,
               letterSpacing: -0.5,

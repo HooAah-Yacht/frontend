@@ -160,10 +160,6 @@ class _CustomCalendarState extends State<CustomCalendar> {
         CalendarFormat.month: 'Month',
       },
       onDaySelected: (selectedDay, focusedDay) {
-        // 날짜 포맷 콘솔 출력
-        print('선택된 날짜: ${selectedDay.year}-${selectedDay.month.toString().padLeft(2, '0')}-${selectedDay.day.toString().padLeft(2, '0')}');
-        print('선택된 날짜 (전체): $selectedDay');
-        print('선택된 날짜 (ISO): ${selectedDay.toIso8601String()}');
         
         setState(() {
           _selectedDay = selectedDay;
