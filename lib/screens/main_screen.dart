@@ -5,10 +5,14 @@ import 'package:frontend/screens/home_screen.dart' show HomeScreenContent;
 import 'package:frontend/screens/yacht_manage_screen.dart' show YachtManageScreenContent;
 import 'package:frontend/screens/calendar_screen.dart' show CalendarScreenContent;
 import 'package:frontend/screens/settings_screen.dart';
+import 'package:frontend/screens/ai_screen.dart';
 import 'package:frontend/services/yacht_service.dart';
 
-// MainScreen에 접근하기 위한 GlobalKey
-final GlobalKey<_MainScreenState> mainScreenKey = GlobalKey<_MainScreenState>();
+// MainScreen에 접근하기 위한 static 변수
+_MainScreenState? _mainScreenStateInstance;
+
+// MainScreenState에 접근하기 위한 getter 함수
+_MainScreenState? getMainScreenState() => _mainScreenStateInstance;
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,7 +30,16 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    _mainScreenStateInstance = this;
     _loadYachtList();
+  }
+
+  @override
+  void dispose() {
+    if (_mainScreenStateInstance == this) {
+      _mainScreenStateInstance = null;
+    }
+    super.dispose();
   }
 
   Future<void> _loadYachtList() async {
@@ -72,14 +85,6 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
 
-    // AI 탭은 아직 구현되지 않음
-    if (tab == HooaahTab.ai) {
-      CustomSnackBar.show(
-        context,
-        message: '해당 기능은 준비 중입니다.',
-      );
-      return;
-    }
 
     setState(() {
       _currentTab = tab;
@@ -118,6 +123,7 @@ class _MainScreenState extends State<MainScreen> {
             onYachtListRefresh: refreshYachtList,
             onCalendarRefresh: refreshCalendar,
           ),
+          const AiScreen(),
           CalendarScreenContent(
             onRefreshCallbackRegistered: (callback) {
               _calendarRefreshCallback = callback;
@@ -139,10 +145,12 @@ class _MainScreenState extends State<MainScreen> {
         return 0;
       case HooaahTab.yacht:
         return 1;
-      case HooaahTab.calendar:
+      case HooaahTab.ai:
         return 2;
-      case HooaahTab.settings:
+      case HooaahTab.calendar:
         return 3;
+      case HooaahTab.settings:
+        return 4;
       default:
         return 0;
     }

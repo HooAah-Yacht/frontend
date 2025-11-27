@@ -56,7 +56,7 @@ class _CalendarReviewScreenState extends State<CalendarReviewScreen> {
 
     _printData(payload);
 
-    // 현재는 review 필드가 없으므로 기존 데이터로 업데이트
+    // review 필드를 포함하여 업데이트
     final result = await CalendarService.updateCalendar(
       calendarId: calendarId,
       type: payload['type'] as String,
@@ -67,6 +67,7 @@ class _CalendarReviewScreenState extends State<CalendarReviewScreen> {
       byUser: payload['byUser'] as bool,
       content: payload['content'] as String,
       partId: payload['partId'] as int?,
+      review: payload['review'] as String?,
     );
 
     if (!mounted) return;
@@ -106,8 +107,7 @@ class _CalendarReviewScreenState extends State<CalendarReviewScreen> {
 
     _printData(payload);
 
-    // 현재는 review 필드가 없으므로 기존 데이터로 업데이트
-    // 나중에 review 필드가 추가되면 payload에 포함시켜야 함
+    // review 필드를 포함하여 업데이트
     final result = await CalendarService.updateCalendar(
       calendarId: calendarId,
       type: payload['type'] as String,
@@ -118,6 +118,7 @@ class _CalendarReviewScreenState extends State<CalendarReviewScreen> {
       byUser: payload['byUser'] as bool,
       content: payload['content'] as String,
       partId: payload['partId'] as int?,
+      review: payload['review'] as String?,
     );
 
     if (!mounted) return;

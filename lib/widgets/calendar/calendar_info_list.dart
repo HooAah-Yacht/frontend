@@ -5,6 +5,8 @@ class CalendarInfoList extends StatelessWidget {
   final String? yachtNickName;
   final String type;
   final Map<String, dynamic>? selectedPart;
+  final bool completed;
+  final String? review;
 
   const CalendarInfoList({
     super.key,
@@ -12,6 +14,8 @@ class CalendarInfoList extends StatelessWidget {
     this.yachtNickName,
     required this.type,
     this.selectedPart,
+    required this.completed,
+    this.review,
   });
 
   @override
@@ -50,6 +54,15 @@ class CalendarInfoList extends StatelessWidget {
           label: '참조인',
           value: '참조인이 존재하지 않습니다.',
         ),
+        if (completed) ...[
+          const SizedBox(height: 20),
+          _buildLabelValue(
+            label: '리뷰',
+            value: review != null && review!.isNotEmpty
+                ? review!
+                : '등록된 리뷰가 없습니다.',
+          ),
+        ],
       ],
     );
   }

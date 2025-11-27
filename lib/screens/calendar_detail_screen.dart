@@ -181,6 +181,7 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
     final yachtNickName = _calendarInfo!['yachtNickName'] as String?;
     final partId = _calendarInfo!['partId'] as int?;
     final partList = _calendarInfo!['partList'] as List<dynamic>?;
+    final review = _calendarInfo!['review'] as String?;
     
     // partId에 해당하는 부품 찾기
     Map<String, dynamic>? selectedPart;
@@ -234,6 +235,8 @@ class _CalendarDetailScreenState extends State<CalendarDetailScreen> {
                 yachtNickName: yachtNickName,
                 type: type,
                 selectedPart: selectedPart,
+                completed: completed,
+                review: review,
               ),
               const SizedBox(height: 100), // 버튼 공간 확보
             ],

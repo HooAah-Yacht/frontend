@@ -206,6 +206,7 @@ class CalendarService {
     required bool byUser,
     required String content,
     int? partId,
+    String? review,
   }) async {
     try {
       final token = await AuthService.getToken();
@@ -228,6 +229,7 @@ class CalendarService {
         'byUser': byUser,
         'content': content,
         'partId': partId,
+        'review': review,
       };
 
       final response = await http.put(

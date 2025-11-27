@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/services/share/share_method.dart';
 
-/// 공유 방법 선택 다이얼로그 (Single Responsibility Principle)
+/// 카카오톡 공유 확인 다이얼로그
 class ShareMethodDialog extends StatelessWidget {
   const ShareMethodDialog({super.key});
 
-  /// 다이얼로그를 표시하고 선택된 공유 방법을 반환합니다.
-  static Future<ShareMethod?> show(BuildContext context) {
-    return showDialog<ShareMethod>(
+  /// 다이얼로그를 표시하고 사용자가 초대를 선택했는지 반환합니다.
+  static Future<bool?> show(BuildContext context) {
+    return showDialog<bool>(
       context: context,
       barrierDismissible: true,
       builder: (context) => const ShareMethodDialog(),
@@ -58,7 +57,7 @@ class ShareMethodDialog extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(ShareMethod.kakao),
+                  onPressed: () => Navigator.of(context).pop(true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2B4184),
                     foregroundColor: Colors.white,

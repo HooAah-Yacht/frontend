@@ -1,15 +1,18 @@
 import 'dart:io';
-import 'package:frontend/services/share/share_service.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
-/// 카카오톡 공유 서비스 구현 (Single Responsibility Principle)
-class KakaoShareService implements ShareService {
-  @override
-  Future<bool> shareInviteLink({
+/// 초대 링크 공유 서비스
+class ShareService {
+  /// 초대 링크를 카카오톡으로 공유합니다.
+  /// 
+  /// [deepLinkUrl] 딥링크 URL
+  /// 
+  /// 성공 시 true, 실패 시 false 반환
+  static Future<bool> shareInviteLink({
     required String deepLinkUrl,
   }) async {
     try {
-      print('🟡 KakaoShareService.shareInviteLink 시작: $deepLinkUrl');
+      print('🟡 ShareService.shareInviteLink 시작: $deepLinkUrl');
       
       // 카카오톡 설치 여부 확인 (Android만)
       if (Platform.isAndroid) {
@@ -63,4 +66,3 @@ class KakaoShareService implements ShareService {
     }
   }
 }
-

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/services/yacht_service.dart';
+import 'package:frontend/services/share_service.dart';
 import 'package:frontend/widgets/common/custom_snackbar.dart';
-import 'package:frontend/services/share/share_service_factory.dart';
 import 'package:frontend/widgets/yacht/share/share_method_dialog.dart';
 
 class MemberListSection extends StatefulWidget {
@@ -48,11 +48,11 @@ class _MemberListSectionState extends State<MemberListSection> {
   }
 
   Future<void> _inviteMember(BuildContext context) async {
-    // 공유 방법 선택 다이얼로그 먼저 표시
+    // 공유 확인 다이얼로그 먼저 표시
     if (!context.mounted) return;
     
-    final shareMethod = await ShareMethodDialog.show(context);
-    if (shareMethod == null) return;
+    final confirmed = await ShareMethodDialog.show(context);
+    if (confirmed != true) return;
 
     try {
       // 초대 코드 조회
@@ -81,8 +81,7 @@ class _MemberListSectionState extends State<MemberListSection> {
 
       // 카카오톡 공유 실행
       print('🔵 카카오톡 공유 시작: $deepLinkUrl');
-      final shareService = ShareServiceFactory.create(shareMethod);
-      final success = await shareService.shareInviteLink(
+      final success = await ShareService.shareInviteLink(
         deepLinkUrl: deepLinkUrl,
       );
       print('🔵 카카오톡 공유 결과: $success');

@@ -7,6 +7,7 @@ enum HooaahTab {
   ai,
   calendar,
   settings,
+  none, // 알림 화면 등에서 사용 (어떤 탭도 활성화되지 않음)
 }
 
 class HooaahBottomNavigation extends StatelessWidget {
