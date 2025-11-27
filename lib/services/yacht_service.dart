@@ -17,7 +17,6 @@ class YachtService {
       final cleanToken = token.trim();
 
       final url = '$baseUrl/api/yacht';
-      print('요트 리스트 조회 URL: $url');
       
       final response = await http.get(
         Uri.parse(url),
@@ -26,11 +25,6 @@ class YachtService {
           'Authorization': 'Bearer $cleanToken',
         },
       );
-
-      print('요트 리스트 조회 응답 상태 코드: ${response.statusCode}');
-      if (response.statusCode != 200) {
-        print('요트 리스트 조회 응답 본문: ${response.body}');
-      }
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -98,9 +92,6 @@ class YachtService {
         body: jsonEncode(payload),
       );
 
-      print('요트 등록 응답 상태 코드: ${response.statusCode}');
-      print('요트 등록 응답 본문: ${response.body}');
-
       if (response.statusCode == 200) {
         return {'success': true};
       } else {
@@ -151,9 +142,6 @@ class YachtService {
         },
       );
 
-      print('초대 코드 조회 응답 상태 코드: ${response.statusCode}');
-      print('초대 코드 조회 응답 본문: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final Map<String, dynamic>? responseData = data['response'] as Map<String, dynamic>?;
@@ -173,7 +161,6 @@ class YachtService {
         // CONFLICT: 백엔드 로직 오류로 인해 멤버인 경우에도 409가 발생
         // 임시 처리: yachtId를 그대로 초대 코드로 사용
         // TODO: 백엔드 수정 후 이 임시 처리 제거 필요
-        print('⚠️ 409 에러 발생 - 임시로 yachtId를 초대 코드로 사용합니다.');
         return {
           'success': true,
           'code': yachtId, // 임시로 yachtId를 초대 코드로 사용
@@ -227,9 +214,6 @@ class YachtService {
         }),
       );
 
-      print('초대 수락 응답 상태 코드: ${response.statusCode}');
-      print('초대 수락 응답 본문: ${response.body}');
-
       if (response.statusCode == 200) {
         return {'success': true};
       } else {
@@ -269,7 +253,6 @@ class YachtService {
       final cleanToken = token.trim();
 
       final url = '$baseUrl/api/yacht/user/$yachtId';
-      print('멤버 목록 조회 URL: $url');
       
       final response = await http.get(
         Uri.parse(url),
@@ -278,11 +261,6 @@ class YachtService {
           'Authorization': 'Bearer $cleanToken',
         },
       );
-
-      print('멤버 목록 조회 응답 상태 코드: ${response.statusCode}');
-      if (response.statusCode != 200) {
-        print('멤버 목록 조회 응답 본문: ${response.body}');
-      }
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);

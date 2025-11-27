@@ -6,6 +6,7 @@ import 'package:frontend/widgets/calendar/calendar_review_text_field.dart';
 import 'package:frontend/widgets/calendar/calendar_review_action_buttons.dart';
 import 'package:frontend/services/calendar_service.dart';
 import 'package:frontend/widgets/common/custom_snackbar.dart';
+import 'package:frontend/screens/main_screen.dart' show getMainScreenState;
 
 class CalendarReviewScreen extends StatefulWidget {
   const CalendarReviewScreen({
@@ -73,6 +74,14 @@ class _CalendarReviewScreenState extends State<CalendarReviewScreen> {
     if (!mounted) return;
 
     if (result['success'] == true) {
+      // 정비 타입이고 완료된 경우 부품 목록 새로고침
+      final isPartType = payload['type'] == 'PART';
+      final isCompleted = payload['completed'] as bool? ?? false;
+      if (isPartType && isCompleted) {
+        final mainScreenState = getMainScreenState();
+        mainScreenState?.refreshYachtList();
+      }
+      
       Navigator.of(context).pop(true); // 업데이트 성공 시 true 반환
       CustomSnackBar.showSuccess(
         context,
@@ -124,6 +133,14 @@ class _CalendarReviewScreenState extends State<CalendarReviewScreen> {
     if (!mounted) return;
 
     if (result['success'] == true) {
+      // 정비 타입이고 완료된 경우 부품 목록 새로고침
+      final isPartType = payload['type'] == 'PART';
+      final isCompleted = payload['completed'] as bool? ?? false;
+      if (isPartType && isCompleted) {
+        final mainScreenState = getMainScreenState();
+        mainScreenState?.refreshYachtList();
+      }
+      
       Navigator.of(context).pop(true); // 업데이트 성공 시 true 반환
       CustomSnackBar.showSuccess(
         context,

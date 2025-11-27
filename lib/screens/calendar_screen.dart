@@ -47,14 +47,6 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
     try {
       final calendars = await CalendarService.getCalendars();
       
-      // 전체 캘린더 데이터 프린트
-      print('=== 캘린더 전체 데이터 로드 ===');
-      print('캘린더 개수: ${calendars.length}');
-      for (final calendar in calendars) {
-        print('일정: ${calendar['content']}, startDate: ${calendar['startDate']}');
-      }
-      print('==========================');
-      
       // 날짜별로 그룹화 (시작일 기준)
       final Map<DateTime, List<dynamic>> eventsMap = {};
       
@@ -70,7 +62,7 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
             }
             eventsMap[dateKey]!.add(calendar);
           } catch (e) {
-            // 날짜 파싱 실패 시 무시
+            // 날짜 파싱 실패 시 로그 출력
           }
         }
       }
@@ -79,7 +71,9 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
         _events = eventsMap;
         _isLoadingCalendars = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('캘린더 로드 오류: $e');
+      print('스택 트레이스: $stackTrace');
       setState(() {
         _isLoadingCalendars = false;
       });
@@ -108,10 +102,6 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
         ? _selectedDay.toLocal() 
         : _selectedDay;
     final selectedDateNormalized = DateTime(selectedDayLocal.year, selectedDayLocal.month, selectedDayLocal.day);
-    final selectedDateStr = '${selectedDateNormalized.year}-${selectedDateNormalized.month.toString().padLeft(2, '0')}-${selectedDateNormalized.day.toString().padLeft(2, '0')}';
-    
-    print('=== 날짜 비교 ===');
-    print('선택된 날짜: $selectedDateStr (${selectedDateNormalized.year}-${selectedDateNormalized.month}-${selectedDateNormalized.day})');
     
     final List<Map<String, dynamic>> result = [];
     
@@ -126,14 +116,11 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
             // API의 startDate를 파싱하고 년/월/일만 추출
             final startDate = DateTime.parse(startDateStr).toLocal();
             final startDateNormalized = DateTime(startDate.year, startDate.month, startDate.day);
-            final apiDateStr = '${startDateNormalized.year}-${startDateNormalized.month.toString().padLeft(2, '0')}-${startDateNormalized.day.toString().padLeft(2, '0')}';
             
             // 년도/월/일만 비교
             final isMatch = startDateNormalized.year == selectedDateNormalized.year &&
                            startDateNormalized.month == selectedDateNormalized.month &&
                            startDateNormalized.day == selectedDateNormalized.day;
-            
-            print('API startDate: $apiDateStr (${startDateNormalized.year}-${startDateNormalized.month}-${startDateNormalized.day}) vs 선택: $selectedDateStr -> ${isMatch ? "매칭" : "불일치"}');
             
             if (isMatch) {
               result.add(calendarMap);
@@ -144,9 +131,6 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
         }
       }
     }
-    
-    print('매칭된 일정 개수: ${result.length}');
-    print('================');
     
     return result;
   }
@@ -165,7 +149,12 @@ class _CalendarScreenContentState extends State<CalendarScreenContent> {
         return AddCalendarEventBottomSheet(
           onSubmit: (data) {
             // 일정 추가 후 목록 새로고침
-            _loadCalendars();
+            // 약간의 지연을 두어 백엔드 트랜잭션이 완료되도록 함
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                _loadCalendars();
+              }
+            });
           },
         );
       },

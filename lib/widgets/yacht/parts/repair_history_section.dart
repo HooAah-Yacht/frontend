@@ -8,10 +8,12 @@ import 'package:frontend/widgets/common/custom_snackbar.dart';
 
 class RepairHistorySection extends StatefulWidget {
   final int partId;
+  final VoidCallback? onRepairAdded;
 
   const RepairHistorySection({
     super.key,
     required this.partId,
+    this.onRepairAdded,
   });
 
   @override
@@ -93,6 +95,9 @@ class RepairHistorySectionState extends State<RepairHistorySection> {
             if (result['success'] == true) {
               // 정비 이력 리스트 새로고침
               loadRepairList();
+              
+              // 부품 정보 새로고침 콜백 호출
+              widget.onRepairAdded?.call();
               
               // 성공 메시지 표시
               CustomSnackBar.showSuccess(

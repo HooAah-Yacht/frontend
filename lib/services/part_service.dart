@@ -27,9 +27,6 @@ class PartService {
         },
       );
 
-      print('부품 리스트 조회 응답 상태 코드: ${response.statusCode}');
-      print('부품 리스트 조회 응답 본문: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final Map<String, dynamic>? responseData = data['response'] as Map<String, dynamic>?;
@@ -61,14 +58,6 @@ class PartService {
       final cleanToken = token.trim();
       final url = '$baseUrl/api/part/$partId';
       
-      // 디버깅: 토큰과 URL 출력
-      print('🔍 부품 삭제 요청 정보:');
-      print('  - URL: $url');
-      print('  - PartId: $partId');
-      print('  - 토큰 존재: ${token.isNotEmpty}');
-      print('  - 토큰 길이: ${token.length}');
-      print('  - 토큰 앞 20자: ${token.length > 20 ? token.substring(0, 20) : token}...');
-
       final response = await http.delete(
         Uri.parse(url),
         headers: {
@@ -76,9 +65,6 @@ class PartService {
           'Authorization': 'Bearer $cleanToken',
         },
       );
-
-      print('부품 삭제 응답 상태 코드: ${response.statusCode}');
-      print('부품 삭제 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': '부품이 삭제되었습니다.'};
@@ -98,12 +84,6 @@ class PartService {
         // 401 에러인 경우 특별 처리
         if (response.statusCode == 401) {
           errorMessage = '로그인이 만료되었습니다. 다시 로그인해주세요.';
-          // 토큰 만료 확인
-          final tokenCheck = await AuthService.getToken();
-          if (tokenCheck != null) {
-            print('⚠️ 401 에러 발생: 토큰은 존재하지만 인증 실패');
-            print('   토큰이 만료되었거나 유효하지 않을 수 있습니다.');
-          }
         }
         
         return {'success': false, 'message': errorMessage};
@@ -147,9 +127,6 @@ class PartService {
         },
         body: jsonEncode(payload),
       );
-
-      print('부품 수정 응답 상태 코드: ${response.statusCode}');
-      print('부품 수정 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': '부품 정보가 수정되었습니다.'};
@@ -214,9 +191,6 @@ class PartService {
         },
         body: jsonEncode(payload),
       );
-
-      print('부품 추가 응답 상태 코드: ${response.statusCode}');
-      print('부품 추가 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': '부품이 추가되었습니다.'};

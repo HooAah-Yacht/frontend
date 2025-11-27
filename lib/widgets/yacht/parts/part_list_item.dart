@@ -5,6 +5,7 @@ import 'package:frontend/screens/part_detail_screen.dart';
 
 class PartListItem extends StatelessWidget {
   final int partId;
+  final int yachtId;
   final String name;
   final String manufacturer;
   final String model;
@@ -16,6 +17,7 @@ class PartListItem extends StatelessWidget {
   const PartListItem({
     super.key,
     required this.partId,
+    required this.yachtId,
     required this.name,
     required this.manufacturer,
     required this.model,
@@ -52,6 +54,7 @@ class PartListItem extends StatelessWidget {
           MaterialPageRoute(
             builder: (_) => PartDetailScreen(
               partId: partId,
+              yachtId: yachtId,
               name: name,
               manufacturer: manufacturer,
               model: model,
@@ -63,9 +66,12 @@ class PartListItem extends StatelessWidget {
           ),
         );
         
-        // 삭제된 경우 콜백 호출
+        // 삭제된 경우 또는 정비 이력이 추가된 경우 콜백 호출
         if (result == true) {
           onPartDeleted?.call();
+        } else {
+          // 정비 이력이 추가되었을 수 있으므로 부품 목록 새로고침
+          onPartUpdated?.call();
         }
       },
       child: Container(

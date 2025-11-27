@@ -27,9 +27,6 @@ class RepairService {
         },
       );
 
-      print('정비 이력 조회 응답 상태 코드: ${response.statusCode}');
-      print('정비 이력 조회 응답 본문: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final Map<String, dynamic>? responseData = data['response'] as Map<String, dynamic>?;
@@ -78,9 +75,6 @@ class RepairService {
         },
         body: jsonEncode(payload),
       );
-
-      print('정비 이력 추가 응답 상태 코드: ${response.statusCode}');
-      print('정비 이력 추가 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': '정비 이력이 추가되었습니다.'};

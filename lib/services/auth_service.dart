@@ -43,18 +43,13 @@ class AuthService {
         }),
       );
 
-      print('응답 상태 코드: ${response.statusCode}');
-      print('응답 본문: ${response.body}');
-
       if (response.statusCode == 200) {
-        print('로그인 성공');
         final Map<String, dynamic> data = jsonDecode(response.body);
         final Map<String, dynamic>? payload =
             data['response'] as Map<String, dynamic>?;
         final String? token = payload?['token'] as String?;
 
         if (token == null || token.isEmpty) {
-          print('응답에 토큰이 없습니다.');
           return {
             'success': false,
             'message': '로그인 토큰을 확인할 수 없습니다.',
@@ -64,14 +59,12 @@ class AuthService {
         await saveToken(token);
         return {'success': true, 'token': token};
       } else if (response.statusCode == 401 || response.statusCode == 404) {
-        print('로그인 실패: 계정이 존재하지 않음');
         return {'success': false, 'message': '계정이 존재하지 않습니다.'};
       } else {
-        print('로그인 실패: 알 수 없는 오류 (${response.statusCode})');
         return {'success': false, 'message': '로그인에 실패했습니다.'};
       }
     } catch (e) {
-      print('네트워크 오류 발생: $e');
+      print('로그인 오류: $e');
       return {'success': false, 'message': '네트워크 오류가 발생했습니다.'};
     }
   }
@@ -83,38 +76,7 @@ class AuthService {
 
   // 토큰 불러오기
   static Future<String?> getToken() async {
-    final token = await _storage.read(key: _tokenKey);
-    if (token != null) {
-      // JWT 토큰 디코딩해서 만료 시간 확인 (디버깅용)
-      try {
-        final parts = token.split('.');
-        if (parts.length == 3) {
-          // Base64 디코딩 (payload 부분)
-          final payload = parts[1];
-          // Base64 패딩 추가
-          String paddedPayload = payload;
-          while (paddedPayload.length % 4 != 0) {
-            paddedPayload += '=';
-          }
-          final decoded = utf8.decode(base64Decode(paddedPayload));
-          final payloadMap = jsonDecode(decoded);
-          final exp = payloadMap['exp'] as int?;
-          if (exp != null) {
-            final expirationDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-            final now = DateTime.now();
-            print('토큰 만료까지: ${expirationDate.difference(now).inSeconds}초');
-            if (expirationDate.isBefore(now)) {
-              print('⚠️ 토큰이 만료되었습니다!');
-            }
-          }
-        }
-      } catch (e) {
-        print('토큰 디코딩 오류: $e');
-      }
-    } else {
-      print('토큰 불러오기 실패: 토큰이 없습니다.');
-    }
-    return token;
+    return await _storage.read(key: _tokenKey);
   }
 
   // 토큰 삭제 (로그아웃)
@@ -165,17 +127,25 @@ class AuthService {
     required String name,
     required String email,
     required String password,
+    String? token,
   }) async {
     try {
       final url = '$baseUrl/public/user/register';
+      final payload = {
+        'email': email,
+        'password': password,
+        'name': name,
+      };
+      
+      // FCM 토큰이 있으면 추가
+      if (token != null && token.isNotEmpty) {
+        payload['token'] = token;
+      }
+      
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-          'name': name,
-        }),
+        body: jsonEncode(payload),
       );
 
       if (response.statusCode == 200) {

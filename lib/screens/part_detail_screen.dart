@@ -4,9 +4,11 @@ import 'package:frontend/widgets/yacht/parts/part_detail_section.dart';
 import 'package:frontend/widgets/yacht/parts/repair_history_section.dart';
 import 'package:frontend/widgets/yacht/parts/edit_part_bottom_sheet.dart';
 import 'package:frontend/services/part_service.dart';
+import 'package:frontend/screens/main_screen.dart' show getMainScreenState;
 
 class PartDetailScreen extends StatefulWidget {
   final int partId;
+  final int yachtId;
   final String name;
   final String manufacturer;
   final String model;
@@ -18,6 +20,7 @@ class PartDetailScreen extends StatefulWidget {
   const PartDetailScreen({
     super.key,
     required this.partId,
+    required this.yachtId,
     required this.name,
     required this.manufacturer,
     required this.model,
@@ -105,6 +108,41 @@ class _PartDetailScreenState extends State<PartDetailScreen> {
     }
   }
 
+  // 부품 정보 새로고침 (최근 정비일 업데이트)
+  Future<void> _refreshPartInfo() async {
+    try {
+      // 부품 목록을 다시 로드하여 최신 정보 가져오기
+      final partList = await PartService.getPartListByYacht(widget.yachtId);
+      
+      // 현재 부품 찾기
+      final updatedPart = partList.firstWhere(
+        (part) => (part['id'] as num?)?.toInt() == widget.partId,
+        orElse: () => <String, dynamic>{},
+      );
+      
+      if (updatedPart.isNotEmpty) {
+        final updatedLastRepairStr = updatedPart['lastRepair'] as String?;
+        
+        setState(() {
+          _currentLastRepairStr = updatedLastRepairStr;
+        });
+      }
+      
+      // 부품 목록 새로고침 (부모 화면에서 처리)
+      widget.onPartUpdated?.call();
+      
+      // 정비 이력 추가 시 백엔드에서 캘린더가 자동 생성되므로 캘린더도 새로고침
+      final mainScreenState = getMainScreenState();
+      mainScreenState?.refreshCalendar();
+    } catch (e) {
+      print('부품 정보 새로고침 실패: $e');
+      // 에러가 발생해도 부품 목록과 캘린더는 새로고침
+      widget.onPartUpdated?.call();
+      final mainScreenState = getMainScreenState();
+      mainScreenState?.refreshCalendar();
+    }
+  }
+
   void _handleEdit() {
     showModalBottomSheet<void>(
       context: context,
@@ -143,6 +181,10 @@ class _PartDetailScreenState extends State<PartDetailScreen> {
 
               // 정비 이력 새로고침
               _repairHistoryKey.currentState?.loadRepairList();
+
+              // 부품 정보 수정 시 백엔드에서 interval이 변경되면 캘린더가 자동 생성되므로 캘린더도 새로고침
+              final mainScreenState = getMainScreenState();
+              mainScreenState?.refreshCalendar();
 
               CustomSnackBar.showSuccess(
                 context,
@@ -213,6 +255,12 @@ class _PartDetailScreenState extends State<PartDetailScreen> {
             RepairHistorySection(
               key: _repairHistoryKey,
               partId: widget.partId,
+              onRepairAdded: () async {
+                // 정비 이력 추가 후 부품 정보 새로고침
+                await _refreshPartInfo();
+                // 부품 목록 새로고침을 위해 콜백 호출
+                widget.onPartUpdated?.call();
+              },
             ),
           ],
         ),

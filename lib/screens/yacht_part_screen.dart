@@ -149,6 +149,7 @@ class _YachtPartScreenState extends State<YachtPartScreen> {
                         padding: EdgeInsets.only(bottom: index < _partList.length - 1 ? 12 : 0),
                         child: PartListItem(
                           partId: (part['id'] as num?)?.toInt() ?? 0,
+                          yachtId: widget.yachtId,
                           name: part['name'] ?? '',
                           manufacturer: part['manufacturer'] ?? '',
                           model: part['model'] ?? '',

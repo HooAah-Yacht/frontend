@@ -151,7 +151,11 @@ class _YachtManageScreenContentState extends State<YachtManageScreenContent> {
                               },
                             ),
                           ),
-                        );
+                        ).then((_) {
+                          // 부품 관리 화면에서 돌아왔을 때 요트 리스트 새로고침
+                          // (정비 이력이 추가되었을 수 있으므로)
+                          widget.onYachtListRefresh?.call();
+                        });
                       } else {
                         CustomSnackBar.showError(
                           context,

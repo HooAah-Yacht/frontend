@@ -7,6 +7,8 @@ import 'package:frontend/screens/notice_screen.dart';
 import 'package:frontend/screens/sign_in_screen.dart';
 import 'package:frontend/screens/settings_screen.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/fcm_service.dart';
+import 'package:frontend/services/alarm_service.dart';
 import 'package:frontend/widgets/yacht/invite_accept_dialog.dart';
 import 'package:frontend/widgets/common/custom_snackbar.dart';
 import 'package:frontend/services/yacht_service.dart';
@@ -190,12 +192,23 @@ class _MyAppState extends State<MyApp> {
 
     print('알림 권한 상태: ${settings.authorizationStatus}');
 
-    // FCM 토큰 가져오기
-    String? token = await messaging.getToken();
-    print('========================================');
-    print('FCM 토큰 (Firebase Console에서 사용):');
-    print(token ?? '토큰을 가져올 수 없습니다');
-    print('========================================');
+    // // FCM 토큰 가져오기 (FCMService 사용, 권한은 이미 요청했으므로 requestPermission: false)
+    // String? token = await FCMService.getFCMToken(requestPermission: false);
+    // print('========================================');
+    // print('FCM 토큰 (Firebase Console에서 사용):');
+    // print(token ?? '토큰을 가져올 수 없습니다');
+    // print('========================================');
+
+    // // FCM 테스트 (토큰이 있고 로그인된 경우에만)
+    // if (token != null && token.isNotEmpty) {
+    //   final isLoggedIn = await AuthService.isLoggedIn();
+    //   if (isLoggedIn) {
+    //     print('FCM 테스트 시작...');
+    //     await AlarmService.testFCM(token);
+    //   } else {
+    //     print('로그인되지 않아 FCM 테스트를 건너뜁니다.');
+    //   }
+    // }
 
     // 토큰 갱신 리스너
     messaging.onTokenRefresh.listen((newToken) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/main_screen.dart' show getMainScreenState;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
@@ -542,10 +543,23 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
 
     final apiType = _convertTypeToApiValue(_selectedType);
     final yachtId = int.parse(_selectedYachtId!);
-    final startDateStr = startDateTime.toUtc().toIso8601String();
-    final endDateStr = endDateTime.toUtc().toIso8601String();
+    
+    // 로컬 날짜/시간을 UTC로 변환하되, 날짜가 바뀌지 않도록 처리
+    // 사용자가 선택한 날짜를 그대로 유지하기 위해 로컬 시간을 UTC로 변환
+    // 예: 2025-01-15 00:00 (로컬) → 2025-01-15 00:00 UTC (날짜 유지)
+    final startDateStr = _formatDateTimeForBackend(startDateTime);
+    final endDateStr = _formatDateTimeForBackend(endDateTime);
     final contentStr = _contentController.text.trim();
     final partId = _selectedPartId != null ? int.parse(_selectedPartId!) : null;
+    
+    // 참조인 email을 사용자 ID로 변환
+    final List<int> userList = _selectedCc.map((email) {
+      final member = _memberList.firstWhere(
+        (m) => (m['email'] as String?) == email,
+        orElse: () => <String, dynamic>{},
+      );
+      return member['id'] as int?;
+    }).where((id) => id != null).cast<int>().toList();
     
     final payload = {
       'type': apiType,
@@ -556,6 +570,7 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       'byUser': true,
       'content': contentStr,
       'partId': partId,
+      'userList': userList,
     };
 
     // 수정 모드일 때 calendarId 추가
@@ -567,6 +582,23 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
     }
 
     return payload;
+  }
+
+  // 날짜/시간을 백엔드 형식으로 변환 (시차 문제 방지)
+  // 백엔드가 Asia/Seoul 타임존을 사용하므로, 사용자가 선택한 날짜/시간을 그대로 Asia/Seoul 타임존으로 전송
+  String _formatDateTimeForBackend(DateTime localDateTime) {
+    // 사용자가 선택한 날짜/시간을 그대로 Asia/Seoul 타임존으로 변환
+    // 예: 2025-11-29 00:00 (사용자 선택) → 2025-11-29T00:00:00+09:00 (Asia/Seoul)
+    // 날짜가 바뀌지 않도록 선택한 날짜/시간을 그대로 사용
+    final year = localDateTime.year.toString().padLeft(4, '0');
+    final month = localDateTime.month.toString().padLeft(2, '0');
+    final day = localDateTime.day.toString().padLeft(2, '0');
+    final hour = localDateTime.hour.toString().padLeft(2, '0');
+    final minute = localDateTime.minute.toString().padLeft(2, '0');
+    final second = localDateTime.second.toString().padLeft(2, '0');
+    
+    // Asia/Seoul 타임존(+09:00)으로 ISO 8601 형식 변환
+    return '$year-$month-${day}T$hour:$minute:$second+09:00';
   }
 
   // 등록 모드: 정비 타입일 때 다이얼로그
@@ -737,6 +769,7 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
       startDate: payload['startDate'] as String,
       endDate: payload['endDate'] as String,
       completed: payload['completed'] as bool,
+      userList: payload['userList'] as List<int>?,
       byUser: payload['byUser'] as bool,
       content: payload['content'] as String,
       partId: payload['partId'] as int?,
@@ -744,27 +777,35 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
 
     if (!mounted) return;
 
-    if (result['success'] == true) {
-      // 생성된 일정 정보를 payload에 병합
-      final createdCalendar = result['calendar'] as Map<String, dynamic>?;
-      if (createdCalendar != null) {
-        payload.addAll(createdCalendar);
-      }
-      
-      _printData(payload);
-      
-      // 일정 등록 직후 캘린더 화면 새로고침
-      widget.onSubmit(payload);
-      
-      // Snackbar 표시
-      CustomSnackBar.showSuccess(
-        context,
-        message: '일정이 등록되었습니다.',
-      );
-      
-      // bottom sheet 닫기
-      Navigator.of(context).pop('updated');
-    } else {
+          if (result['success'] == true) {
+            // 생성된 일정 정보를 payload에 병합
+            final createdCalendar = result['calendar'] as Map<String, dynamic>?;
+            if (createdCalendar != null) {
+              payload.addAll(createdCalendar);
+            }
+            
+            _printData(payload);
+            
+            // 일정 등록 직후 캘린더 화면 새로고침
+            widget.onSubmit(payload);
+            
+            // 정비 타입이고 완료된 경우 부품 목록 새로고침
+            final isPartType = payload['type'] == 'PART';
+            final isCompleted = payload['completed'] as bool? ?? false;
+            if (isPartType && isCompleted) {
+              final mainScreenState = getMainScreenState();
+              mainScreenState?.refreshYachtList();
+            }
+            
+            // Snackbar 표시
+            CustomSnackBar.showSuccess(
+              context,
+              message: '일정이 등록되었습니다.',
+            );
+            
+            // bottom sheet 닫기
+            Navigator.of(context).pop('updated');
+          } else {
       CustomSnackBar.showError(
         context,
         message: result['message'] ?? '일정 등록에 실패했습니다.',
@@ -972,15 +1013,24 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
 
         if (!mounted) return;
 
-        if (result['success'] == true) {
-          _printData(payload);
-          CustomSnackBar.showSuccess(
-            context,
-            message: '일정이 수정되었습니다.',
-          );
-          widget.onSubmit(payload);
-          Navigator.of(context).pop('updated');
-        } else {
+          if (result['success'] == true) {
+            _printData(payload);
+            
+            // 정비 타입이고 완료 상태가 변경된 경우 부품 목록 새로고침
+            final isPartType = payload['type'] == 'PART';
+            final isCompleted = payload['completed'] as bool? ?? false;
+            if (isPartType && isCompleted) {
+              final mainScreenState = getMainScreenState();
+              mainScreenState?.refreshYachtList();
+            }
+            
+            CustomSnackBar.showSuccess(
+              context,
+              message: '일정이 수정되었습니다.',
+            );
+            widget.onSubmit(payload);
+            Navigator.of(context).pop('updated');
+          } else {
           CustomSnackBar.showError(
             context,
             message: result['message'] ?? '일정 수정에 실패했습니다.',
@@ -1025,7 +1075,10 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
 
           if (result['success'] == true) {
             // 부품의 최근 정비일 업데이트는 백엔드에서 처리됨 (completed=true일 때만)
+            
+            // 일정 등록 성공 시 캘린더 새로고침
             widget.onSubmit(payload);
+            
             Navigator.of(context).pop();
             CustomSnackBar.showSuccess(
               context,
@@ -1051,18 +1104,35 @@ class _AddCalendarEventBottomSheetState extends State<AddCalendarEventBottomShee
             byUser: payload['byUser'] as bool,
             content: payload['content'] as String,
             partId: payload['partId'] as int?,
+            userList: payload['userList'] as List<int>?,
           );
 
           if (!mounted) return;
 
           if (result['success'] == true) {
             _printData(payload);
+            
+            // 일정 등록 성공 시 캘린더 새로고침 (Navigator.pop 전에 호출)
             widget.onSubmit(payload);
+            
+            // 정비 타입이고 완료된 경우 부품 목록도 새로고침
+            final isPartType = payload['type'] == 'PART';
+            final isCompleted = payload['completed'] as bool? ?? false;
+            if (isPartType && isCompleted) {
+              final mainScreenState = getMainScreenState();
+              mainScreenState?.refreshYachtList();
+            }
+            
+            // bottom sheet 닫기
             Navigator.of(context).pop();
-            CustomSnackBar.showSuccess(
-              context,
-              message: '일정이 등록되었습니다.',
-            );
+            
+            // Snackbar는 bottom sheet가 닫힌 후에 표시
+            if (mounted) {
+              CustomSnackBar.showSuccess(
+                context,
+                message: '일정이 등록되었습니다.',
+              );
+            }
           } else {
             CustomSnackBar.showError(
               context,

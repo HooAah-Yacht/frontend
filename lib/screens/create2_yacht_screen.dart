@@ -8,6 +8,7 @@ import '../widgets/yacht/create2/create_yacht_parts_registration_section.dart';
 import '../widgets/yacht/create2/create_yacht_register_button_section.dart';
 import '../widgets/yacht/create2/recommended_parts_list.dart';
 import '../services/yacht_service.dart';
+import 'main_screen.dart' show getMainScreenState;
 
 class Create2YachtScreen extends StatefulWidget {
   const Create2YachtScreen({
@@ -116,9 +117,13 @@ class _Create2YachtScreenState extends State<Create2YachtScreen> {
       if (result['success'] == true) {
         // 등록 성공 시 결과를 반환하고 홈 스크린으로 이동
         Navigator.of(context).popUntil((route) => route.isFirst);
-        // MainScreen의 리스트 갱신을 위해 약간의 지연 후 갱신
-        // MainScreen이 이미 마운트되어 있으므로 직접 갱신할 수 없으므로
-        // Navigator.popUntil 후 MainScreen의 생명주기에서 갱신되도록 함
+        
+        // MainScreen의 리스트 및 캘린더 갱신
+        final mainScreenState = getMainScreenState();
+        if (mainScreenState != null) {
+          mainScreenState.refreshYachtList();
+          mainScreenState.refreshCalendar();
+        }
       } else {
         // 등록 실패 시 에러 메시지 표시
         setState(() {

@@ -57,7 +57,6 @@ class _AiScreenState extends State<AiScreen> {
   @override
   void initState() {
     super.initState();
-    print('AiScreen initState: 메시지 개수 = ${_messages.length}');
     // 스크롤을 맨 아래로 이동
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -76,8 +75,6 @@ class _AiScreenState extends State<AiScreen> {
   Widget build(BuildContext context) {
     // 키보드 높이 가져오기
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    
-    print('AiScreen build: 메시지 개수 = ${_messages.length}');
     
     return Scaffold(
       backgroundColor: Colors.white,

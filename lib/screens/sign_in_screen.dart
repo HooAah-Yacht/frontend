@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 import '../widgets/common/custom_app_bar.dart';
 import '../widgets/common/custom_snackbar.dart';
 import '../widgets/signin/signin_button.dart';
@@ -191,10 +192,14 @@ class _SignInScreenState extends State<SignInScreen> {
       _isSubmitting = true;
     });
 
+    // FCM 토큰 가져오기 (권한 요청 포함)
+    String? fcmToken = await FCMService.getFCMToken(requestPermission: true);
+
     final result = await AuthService.register(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: password,
+      token: fcmToken,
     );
 
     if (!mounted) return;
