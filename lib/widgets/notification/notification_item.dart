@@ -36,7 +36,7 @@ class NotificationItem extends StatelessWidget {
     
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F9FE),
+        color: isPast ? const Color(0xFFECC8C4) : const Color(0xFFF8F3D6),
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(16),
