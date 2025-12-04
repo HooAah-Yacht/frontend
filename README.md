@@ -10,16 +10,16 @@ Flutter 기반 크로스플랫폼 모바일 애플리케이션
 
 | | | |
 |:---:|:---:|:---:|
-| ![로그인](./screenshots/login.png) | ![회원가입](./screenshots/signin.png) | ![홈](./screenshots/home.png) |
-| **로그인** | **회원가입** | **홈** |
-| ![요트 등록 1단계](./screenshots/yacht_create1.png) | ![요트 등록 2단계](./screenshots/yacht_create2.png) | ![요트 관리](./screenshots/yacht_manage.png) |
-| **요트 등록 1단계** | **요트 등록 2단계** | **요트 관리** |
-| ![장비 목록](./screenshots/yacht_parts.png) | ![장비 상세](./screenshots/part_detail.png) | ![캘린더](./screenshots/calendar.png) |
-| **장비 목록** | **장비 상세** | **캘린더** |
-| ![일정 상세](./screenshots/calendar_detail.png) | ![정비 후기](./screenshots/calendar_review.png) | ![AI 어시스턴트](./screenshots/ai.png) |
-| **일정 상세** | **정비 후기** | **AI 어시스턴트** |
-| ![알림](./screenshots/notice.png) | ![설정](./screenshots/settings.png) | |
-| **알림** | **설정** | |
+| ![홈](./screenshots/홈.png) | ![요트등록](./screenshots/요트등록.png) | ![요트등록](./screenshots/요트등록_부품.png) |
+| **홈** | **요트등록** | **요트등록** |
+| ![부품관리](./screenshots/부품관리.png) | ![부품상세](./screenshots/부품상세.png) | ![부품등록](./screenshots/부품등록.png) |
+| **부품관리** | **부품상세** | **부품등록** |
+| ![요트관리](./screenshots/요트관리.png) | ![일정등록](./screenshots/일정등록.png) | ![캘린더](./screenshots/달력_진행전.png) |
+| **요트관리** | **일정등록** | **캘린더** |
+| ![캘린더](./screenshots/달력_완료.png) | ![일정세부](./screenshots/일정세부.png) | ![후기](./screenshots/후기남기기.png) |
+| **캘린더** | **일정세부** | **후기** |
+| ![AI](./screenshots/AI.png) | ![알림](./screenshots/알림.png) | |
+| **AI** | **알림** | |
 
 ---
 
